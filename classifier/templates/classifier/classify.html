@@ -1,0 +1,32 @@
+{% extends 'classifier/base.html' %}
+{% block title %}Classify a Digit{% endblock %}
+{% block content %}
+    <h1>Upload a Digit</h1>
+    <p>Upload a CSV with 28 rows and 28 columns of pixel intensities, no
+       header row. Values may be 0-255 or 0-1 — scaling is detected
+       automatically.</p>
+
+    <form method="post" enctype="multipart/form-data" class="stacked-form">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit">Classify</button>
+    </form>
+
+    {% if image_data_uri %}
+        <div class="result-panel">
+            <h2>Result</h2>
+            <img src="{{ image_data_uri }}" alt="Uploaded digit" class="digit-preview">
+            <p class="prediction">
+                Predicted digit: <strong>{{ predicted_digit }}</strong>
+                <span class="confidence">({{ confidence_pct }}% confidence)</span>
+            </p>
+            <p><small>
+                Prediction is currently from a placeholder stub, not the
+                trained model — see ml/model.py. It exists to confirm the
+                upload &rarr; render &rarr; classify &rarr; display pipeline
+                works end to end.
+            </small></p>
+            <a href="{% url 'classify' %}"><button type="button">Start Over</button></a>
+        </div>
+    {% endif %}
+{% endblock %}

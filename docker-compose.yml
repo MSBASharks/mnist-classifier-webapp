@@ -1,0 +1,22 @@
+services:
+  web:
+    build: .
+    ports:
+      # Maps container port 8000 to host (Lightsail instance) port 8000.
+      # ngrok then tunnels to the HOST's port 8000 (`ngrok http 8000`),
+      # which forwards into this container. This mapping is what makes
+      # that chain work end to end.
+      - "8000:8000"
+    environment:
+      - DJANGO_DEBUG=False
+      - DJANGO_DB_DIR=/app/data
+    volumes:
+      # Persists the SQLite database on the host so it survives
+      # `docker compose down` / rebuilds. Without this, every rebuild
+      # would wipe the database and re-create the 'dan' account fresh
+      # each time (harmless, but you'd lose any other test data).
+      - db_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  db_data:
