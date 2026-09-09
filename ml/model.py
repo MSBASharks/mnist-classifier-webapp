@@ -16,7 +16,18 @@ across every request instead of reloading (slowly) on each upload.
 import numpy as np
 import tensorflow as tf
 
-model = tf.keras.models.load_model('ml/mnistmodel.keras')
+# The notebook built the final layer with activation=tf.nn.softmax (a direct
+# function reference, not the string 'softmax'). Whatever Keras version
+# Colab used at training time serialized that as TensorFlow's internal name
+# for it, 'softmax_v2'. Keras 3 (bundled with this tensorflow-cpu version)
+# uses a different, stricter deserializer that doesn't recognize that
+# internal name on its own -- custom_objects tells it explicitly what
+# 'softmax_v2' actually refers to, so the saved model can load correctly
+# without needing to retrain or re-save it.
+model = tf.keras.models.load_model(
+    'ml/mnistmodel.keras',
+    custom_objects={'softmax_v2': tf.nn.softmax},
+)
 
 
 def classify_image(img_array):
