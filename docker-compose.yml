@@ -1,6 +1,8 @@
 services:
   web:
-    build: .
+    build:
+      context: .
+      network: host
     ports:
       # Maps container port 8000 to host (Lightsail instance) port 8000.
       # ngrok then tunnels to the HOST's port 8000 (`ngrok http 8000`),
