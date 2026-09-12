@@ -71,3 +71,39 @@ TensorFlow can be memory-hungry even for pure inference. If the container
 gets OOM-killed after adding the real model, first try dropping
 `--workers 2` to `--workers 1` in `entrypoint.sh`, then consider adding a
 swap file on the instance if that's not enough.
+
+## Update: automatic ngrok startup (September 12, 2026)
+
+The AWS server now runs ngrok through systemd instead of a manual tmux
+session. It is enabled to start at boot and restart if ngrok exits.
+The service definition is saved in deploy/ngrok.service.
+
+To install on the existing AWS setup, run from the repository root:
+
+    sudo cp deploy/ngrok.service /etc/systemd/system/ngrok.service
+    sudo systemctl daemon-reload
+
+Stop any ngrok process running manually in tmux before starting the
+service, then run:
+
+    sudo systemctl enable --now ngrok
+
+This assumes user bitnami, ngrok at /usr/local/bin/ngrok, an authenticated
+config at /home/bitnami/.config/ngrok/ngrok.yml, and the app on port 8000.
+Do not commit ngrok.yml because it contains authentication credentials.
+
+To check the service and current public URL:
+
+    systemctl status ngrok --no-pager
+    curl --max-time 10 http://127.0.0.1:4040/api/tunnels
+
+The public URL stayed the same during recovery. Verify it before submission.
+
+Recovery note: rebooting restored instance health and server access;
+restarting ngrok restored public access. Login and classification were
+tested successfully. Earlier logs showed network route-setting failures,
+but the original outage cause remains unconfirmed. No database services
+or swap settings were changed.
+
+The ngrok service is running and enabled. Its startup after a further
+reboot has not yet been tested.
