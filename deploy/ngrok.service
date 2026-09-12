@@ -1,0 +1,15 @@
+[Unit]
+Description=ngrok tunnel for MNIST website
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=0
+
+[Service]
+User=bitnami
+Environment=HOME=/home/bitnami
+ExecStart=/usr/local/bin/ngrok http 8000 --config=/home/bitnami/.config/ngrok/ngrok.yml --log=stdout
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
