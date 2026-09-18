@@ -1,24 +1,34 @@
+# Automatically build and deploy the MNIST app to Lightsail.
+#
+# Pull requests: build the Docker image on GitHub to check that it builds.
+# Merges or pushes to main: build, transfer the image over SSH, and restart
+# the app using Lightsail's existing Docker Compose configuration.
+#
+# Building on GitHub reduces memory pressure on the Lightsail instance.
+# The existing database volume is preserved during deployment.
+# SSH credentials and the server's identity key come from GitHub Secrets.
+
 name: Deploy to Lightsail
 
 on:
-  # Check that the image builds before merging a pull request.
   pull_request:
     branches: [main]
-
-  # Build the updated app when changes reach main.
   push:
     branches: [main]
-
-  # Allow a manual run from the Actions tab.
   workflow_dispatch:
 
 permissions:
   contents: read
 
+# Run one workflow at a time for each branch.
+concurrency:
+  group: lightsail-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     steps:
       - name: Download repository code
@@ -26,9 +36,56 @@ jobs:
         with:
           persist-credentials: false
 
-      # Build on GitHub, avoiding memory pressure on Lightsail.
-      # git archive includes committed files without Git history.
+      # Build on GitHub instead of the small Lightsail server.
       - name: Build Docker image
         run: |
           git archive HEAD | docker build \
-            --tag mnist-classifier-webapp:${{ github.sha }} -
+            --tag mnist-classifier-webapp-web:${{ github.sha }} -
+
+      # PRs only build. Only main can access the deployment steps.
+      - name: Set up SSH connection
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          SSH_KEY: ${{ secrets.LIGHTSAIL_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.LIGHTSAIL_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_ed25519
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_ed25519 ~/.ssh/known_hosts
+
+      # Transfer the finished image directly into Docker on Lightsail.
+      - name: Transfer Docker image
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+        run: |
+          docker save mnist-classifier-webapp-web:${{ github.sha }} |
+            gzip |
+            ssh -o BatchMode=yes -o StrictHostKeyChecking=yes \
+              -o ConnectTimeout=15 -o ServerAliveInterval=30 \
+              "bitnami@$LIGHTSAIL_HOST" \
+              'gunzip | sudo -n docker load'
+
+      # Use the existing Compose configuration and database volume.
+      - name: Restart app with new image
+        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        env:
+          LIGHTSAIL_HOST: ${{ secrets.LIGHTSAIL_HOST }}
+        run: |
+          ssh -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=15 -o ServerAliveInterval=30 \
+            "bitnami@$LIGHTSAIL_HOST" \
+            'bash -se' <<'REMOTE'
+          cd /home/bitnami/mnist-classifier-webapp
+
+          sudo -n docker tag \
+            mnist-classifier-webapp-web:${{ github.sha }} \
+            mnist-classifier-webapp-web:latest
+
+          sudo -n docker compose up -d \
+            --no-build --pull never --force-recreate \
+            --wait --wait-timeout 120 web
+
+          sudo -n docker compose ps
+          REMOTE
