@@ -1,0 +1,34 @@
+name: Deploy to Lightsail
+
+on:
+  # Check that the image builds before merging a pull request.
+  pull_request:
+    branches: [main]
+
+  # Build the updated app when changes reach main.
+  push:
+    branches: [main]
+
+  # Allow a manual run from the Actions tab.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Download repository code
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Build on GitHub, avoiding memory pressure on Lightsail.
+      # git archive includes committed files without Git history.
+      - name: Build Docker image
+        run: |
+          git archive HEAD | docker build \
+            --tag mnist-classifier-webapp:${{ github.sha }} -
