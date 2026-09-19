@@ -79,13 +79,19 @@ button {
 }
 
 .digit-preview {
+    width: 224px;            /* 8x the 28px source */
+    height: 224px;
     image-rendering: pixelated;
     border: 1px solid #ccc;
+    border-radius: 4px;
+    display: block;
+    margin: 1rem 0;
 }
 
-.prediction {
-    font-size: 1.2rem;
-}
+.prediction { font-size: 1.2rem; }
+.prediction strong { font-size: 2.5rem; color: #2563eb; }
+
+.stub-note { color: #6b7280; font-size: 0.85rem; }
 
 .confidence {
     color: #6b7280;
