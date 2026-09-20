@@ -4,22 +4,30 @@
 
 :root {
     color-scheme: dark;            /* dark scrollbars + native form controls */
-    --bg:        #0f1419;          /* page background */
-    --surface:   #182029;          /* cards / sections */
-    --surface-2: #1f2933;          /* nested: nav, code blocks, table headers */
-    --border:    #2d3a47;
-    --text:      #e6e9ed;
-    --muted:     #9aa5b1;
-    --accent:    #60a5fa;          /* links, headings, borders of callouts */
+    --bg:        #162861;          /* page background: space blue */
+    --surface:   #101c40;          /* cards / sections */
+    --surface-2: #16264f;          /* nested: nav, code blocks, table headers */
+    --border:    #2a3d6e;
+    --text:      #e6e9ed;          /* paragraph text */
+    --heading:   #a9b3c4;          /* section titles: slightly grey, softer than body */
+    --muted:     #8f9bb3;
+    --accent:    #60a5fa;          /* links, borders of callouts */
     --accent-btn:#2563eb;          /* button fill (white text stays readable) */
     --accent-btn-hover: #1d4fd8;
-    --accent-bg: #16263d;          /* callouts / highlighted table rows */
+    --accent-bg: #142a55;          /* callouts / highlighted table rows */
+
+    /* Layout: content column widths (smaller = bigger side margins) */
+    --col-width: 600px;
+    --col-width-writeup: 700px;
     --error-bg:  #3b1a1a;
     --error-text:#fca5a5;
 }
 
 body {
-    font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+    /* Calibri where installed (Windows/Office); Carlito is its metric-compatible
+       twin on Linux/ChromeOS; the rest are similar humanist sans fallbacks. */
+    font-family: Calibri, Carlito, "Segoe UI", Candara, Optima, "Trebuchet MS", sans-serif;
+    font-size: 1.1rem;             /* Calibri runs small, so bump it slightly */
     margin: 0;
     background: var(--bg);
     color: var(--text);
@@ -28,7 +36,9 @@ body {
 
 a { color: var(--accent); }
 
-/* Centered headings site-wide (body paragraphs stay left-aligned for readability) */
+/* Centered, slightly grey headings site-wide
+   (body paragraphs stay left-aligned and brighter for readability) */
+h1, h2, h3 { color: var(--heading); }
 h1, h2 { text-align: center; }
 
 /* ---------- Navigation ---------- */
@@ -61,8 +71,8 @@ h1, h2 { text-align: center; }
 /* ---------- Main content card ---------- */
 
 .content {
-    max-width: 760px;
-    margin: 2rem auto;
+    width: min(var(--col-width), calc(100% - 2rem));  /* narrow column, wide side margins */
+    margin: 3.5rem auto;
     background: var(--surface);
     border: 1px solid var(--border);
     padding: 2rem;
@@ -73,10 +83,11 @@ h1, h2 { text-align: center; }
 /* The write-up page draws its own section cards, so drop the outer card there
    (avoids a card inside a card). */
 .content:has(.writeup) {
+    width: min(var(--col-width-writeup), calc(100% - 2rem));
     background: transparent;
     border: 0;
     box-shadow: none;
-    padding: 0 1rem;
+    padding: 0;
 }
 
 /* ---------- Forms ---------- */
@@ -194,16 +205,16 @@ button:hover {
   line-height: 1.65;
 }
 
-.writeup h1 { font-size: 2.2rem; line-height: 1.2; margin: 0 0 .25rem; }
+.writeup h1 { font-size: 2.2rem; line-height: 1.2; margin: 0 0 .25rem; color: var(--heading); }
 .writeup h2 {
   font-size: 1.55rem;
   margin: 0 0 .75rem;
   padding-bottom: .3rem;
   border-bottom: 0;
-  color: var(--wu-accent);
+  color: var(--heading);
   scroll-margin-top: 1rem;
 }
-.writeup h3 { font-size: 1.2rem; margin: 2rem 0 .5rem; }
+.writeup h3 { font-size: 1.2rem; margin: 2rem 0 .5rem; color: var(--heading); }
 .writeup p  { margin: 0 0 1rem; }
 .writeup a  { color: var(--wu-accent); }
 
@@ -242,7 +253,7 @@ button:hover {
   border-top: 4px solid var(--wu-accent);
   text-align: center;
 }
-.part-divider .part-title { border: 0; margin: 0 0 .25rem; padding: 0; font-size: 1.9rem; }
+.part-divider .part-title { border: 0; margin: 0 0 .25rem; padding: 0; font-size: 1.9rem; color: var(--heading); }
 
 /* Code / architecture snippets */
 .writeup pre.arch {
@@ -323,6 +334,7 @@ button:hover {
 
 /* Phones */
 @media (max-width: 600px) {
+  body { font-size: 1.05rem; }
   .writeup h1 { font-size: 1.75rem; }
   .writeup h2 { font-size: 1.35rem; }
   .writeup section { padding: 1.25rem 1rem; }
