@@ -79,19 +79,13 @@ button {
 }
 
 .digit-preview {
-    width: 224px;            /* 8x the 28px source */
-    height: 224px;
     image-rendering: pixelated;
     border: 1px solid #ccc;
-    border-radius: 4px;
-    display: block;
-    margin: 1rem 0;
 }
 
-.prediction { font-size: 1.2rem; }
-.prediction strong { font-size: 2.5rem; color: #2563eb; }
-
-.stub-note { color: #6b7280; font-size: 0.85rem; }
+.prediction {
+    font-size: 1.2rem;
+}
 
 .confidence {
     color: #6b7280;
@@ -104,3 +98,149 @@ button {
     font-size: 0.85rem;
     margin: 2rem 0;
 }
+
+/* ==========================================================================
+   Write-up page (writeup.html). Scoped under .writeup so it does not affect
+   the login page, classify page, or the .alert message styling above.
+   ========================================================================== */
+
+.writeup {
+  --wu-text: #222;
+  --wu-muted: #6b7280;
+  --wu-accent: #2563eb;
+  --wu-border: #e5e7eb;
+  --wu-surface: #f7f7f9;
+  --wu-highlight: #eaf1fe;
+  /* sits inside .content (720px white card), so no extra width/padding */
+  padding: 0;
+  color: var(--wu-text);
+  line-height: 1.65;
+}
+
+.writeup h1 { font-size: 2.2rem; line-height: 1.2; margin: 0 0 .25rem; }
+.writeup h2 {
+  font-size: 1.55rem;
+  margin: 2.75rem 0 .75rem;
+  padding-bottom: .3rem;
+  border-bottom: 2px solid var(--wu-border);
+  scroll-margin-top: 1rem;
+}
+.writeup h3 { font-size: 1.2rem; margin: 2rem 0 .5rem; }
+.writeup p  { margin: 0 0 1rem; }
+.writeup a  { color: var(--wu-accent); }
+
+.writeup-header { margin-bottom: 1.5rem; }
+.writeup-subtitle { color: var(--wu-muted); font-size: 1.1rem; margin: 0 0 .75rem; }
+.writeup-cta, .writeup-footer-cta { font-weight: 600; }
+.writeup-footer-cta { margin-top: 3rem; }
+
+/* Table of contents */
+.writeup-toc {
+  background: var(--wu-surface);
+  border: 1px solid var(--wu-border);
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  margin-bottom: 2rem;
+}
+.writeup-toc h2 { font-size: 1rem; margin: 0 0 .5rem; padding: 0; border: 0;
+  text-transform: uppercase; letter-spacing: .05em; color: var(--wu-muted); }
+.writeup-toc ol { margin: 0; padding-left: 1.25rem; columns: 2; column-gap: 2rem; }
+.writeup-toc li { margin-bottom: .25rem; break-inside: avoid; }
+
+/* Divider between the model story and the error analysis */
+.part-divider {
+  margin: 4rem 0 0;
+  padding: 1.5rem 0 0;
+  border-top: 4px solid var(--wu-accent);
+}
+.part-divider .part-title { border: 0; margin: 0 0 .25rem; padding: 0; font-size: 1.9rem; }
+
+/* Code / architecture snippets */
+.writeup pre.arch {
+  background: var(--wu-surface);
+  border: 1px solid var(--wu-border);
+  border-left: 4px solid var(--wu-accent);
+  border-radius: 4px;
+  padding: .85rem 1rem;
+  margin: 0 0 1.25rem;
+  overflow-x: auto;
+  font-size: .9rem;
+  line-height: 1.5;
+}
+.writeup pre.arch code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+
+/* Callouts */
+.writeup .callout {
+  background: var(--wu-highlight);
+  border-left: 4px solid var(--wu-accent);
+  border-radius: 4px;
+  padding: .85rem 1.1rem;
+  font-size: 1.1rem;
+}
+
+/* Figures */
+.writeup figure { margin: 1.5rem 0; }
+.writeup figure img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+  border: 1px solid var(--wu-border);
+  border-radius: 4px;
+  background: #fff;
+}
+.writeup figcaption {
+  margin-top: .5rem;
+  text-align: center;
+  font-size: .9rem;
+  color: var(--wu-muted);
+}
+
+/* Tables: wrapper lets wide tables scroll on small screens instead of
+   breaking the page layout */
+.writeup .table-wrap { overflow-x: auto; margin: 1.25rem 0 1.5rem; }
+.writeup table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+.writeup caption {
+  caption-side: top;
+  text-align: left;
+  font-weight: 600;
+  color: var(--wu-muted);
+  padding-bottom: .5rem;
+}
+.writeup th, .writeup td {
+  padding: .5rem .75rem;
+  border-bottom: 1px solid var(--wu-border);
+  text-align: left;
+  vertical-align: top;
+}
+.writeup thead th {
+  background: var(--wu-surface);
+  border-bottom: 2px solid var(--wu-border);
+  white-space: nowrap;
+}
+.writeup tbody th { font-weight: 600; }
+.writeup .num { text-align: right; font-variant-numeric: tabular-nums; }
+.writeup thead th.num { text-align: right; }
+.writeup tbody tr:nth-child(even) { background: #fbfbfc; }
+.writeup tr.key, .writeup tr.key:nth-child(even) { background: var(--wu-highlight); }
+.writeup tfoot th, .writeup tfoot td {
+  border-top: 2px solid var(--wu-border);
+  border-bottom: 0;
+  background: var(--wu-surface);
+}
+.writeup .narrow-table { max-width: 24rem; }
+.writeup .config-table th { width: 10rem; background: var(--wu-surface); }
+.writeup .log-table td:nth-child(2) { min-width: 16rem; }
+
+/* Phones */
+@media (max-width: 600px) {
+  .writeup h1 { font-size: 1.75rem; }
+  .writeup h2 { font-size: 1.35rem; }
+  .writeup-toc ol { columns: 1; }
+}
+
+@media print {
+  .writeup-toc, .writeup-cta, .writeup-footer-cta { display: none; }
+  .writeup figure, .writeup table { break-inside: avoid; }
+}
+
