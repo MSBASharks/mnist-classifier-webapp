@@ -1,13 +1,596 @@
 {% extends 'classifier/base.html' %}
+{% load static %}
 {% block title %}Process Write-up{% endblock %}
 {% block content %}
-    <h1>How We Built This</h1>
-    <p><em>Placeholder content — Workstream D replaces this with the real
-       write-up: architecture search story, final model diagram, test-set
-       results, well-classified vs. misclassified examples, and analysis
-       of common confusions.  CANT WAIT FOR THAT!</em></p>
-    <p>This is a new paragraph to test that the Git push actually works.</p>
-    <p>This page currently exists to confirm the routing, templates, and
-       login-gating are working end to end.</p>
-    <p><a href="{% url 'classify' %}">Try the classifier &rarr;</a></p>
+<article class="writeup">
+
+  <header class="writeup-header">
+    <h1>How We Built the Model</h1>
+    <p class="writeup-subtitle">Group Project 1 &mdash; MNIST Image Classification</p>
+    <p class="writeup-cta"><a href="{% url 'classify' %}">Try the classifier &rarr;</a></p>
+  </header>
+
+  <nav class="writeup-toc" aria-label="On this page">
+    <h2>On this page</h2>
+    <ol>
+      <li><a href="#start">Where we started</a></li>
+      <li><a href="#search">How we ran the search</a></li>
+      <li><a href="#unjustified">Taking out the choices we could not justify</a></li>
+      <li><a href="#depth">Adding depth</a></li>
+      <li><a href="#problem-changed">The problem changed</a></li>
+      <li><a href="#regularization">Regularization</a></li>
+      <li><a href="#lessons">Lessons learned</a></li>
+      <li><a href="#final-training">Final training</a></li>
+      <li><a href="#log">The full log</a></li>
+      <li><a href="#differently">What we would do differently</a></li>
+      <li><a href="#architecture">Final model architecture</a></li>
+      <li><a href="#examples">Well classified and misclassified examples</a></li>
+      <li><a href="#confusions">Common confusions and why they occur</a></li>
+      <li><a href="#perfect">Is 100 percent accuracy possible?</a></li>
+    </ol>
+  </nav>
+
+  <!-- ====================== PART 1: THE MODEL ====================== -->
+
+  <section id="start">
+    <h2>Where we started</h2>
+    <p>Our team started with a base network from a previous homework assignment.
+       It had convolutional layers in it, so on paper it was a convolutional network:</p>
+    <pre class="arch"><code>Conv2D(10 filters, 5x5) -&gt; Conv2D(10 filters, 5x5) -&gt; MaxPool
+-&gt; Flatten -&gt; Dense(128, L1) -&gt; Dense(64, softplus, L1) -&gt; Dense(10)</code></pre>
+    <p>It got 98.23% validation accuracy. That is not a bad number, but we could
+       not tune our way past it, and we spent a couple of runs trying before we
+       looked at the model more carefully.</p>
+    <p>What changed our approach was counting where the parameters actually were.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Parameter split in the inherited model</caption>
+        <thead>
+          <tr><th scope="col">Component</th><th scope="col" class="num">Parameters</th><th scope="col" class="num">Share of model</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">Convolutional layers</th><td class="num">~2,800</td><td class="num">2%</td></tr>
+          <tr><th scope="row">Dense classifier head</th><td class="num">~137,000</td><td class="num">98%</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Our beginning model was a CNN with a large dense head and a small
+       convolutional feature extractor. With 98% of the parameters sitting in the
+       classification head, we wanted the convolutional layers to learn richer
+       features of the digits and then pass those features to a classification
+       head with fewer hidden layers.</p>
+    <p>Once we saw that, the plan for the rest of the project was obvious:
+       increase capacity in the feature extractor. This way, the convolutional
+       layers would learn features of the digit, then apply a shallower decision
+       layer on top of already-good features.</p>
+  </section>
+
+  <section id="search">
+    <h2>How we ran the search</h2>
+    <p>We did not grid search. We had eight or so hyperparameters we cared about,
+       and even three values each would have meant thousands of training runs.
+       Instead we changed one thing at a time, trained, logged the result, kept
+       whatever won, and moved on to the next thing. We ordered the stages by how
+       much we expected each one to matter, so the expensive compute went where it
+       was most likely to pay off.</p>
+    <p>Our approach loosely followed two rules:</p>
+    <p>The first was one change per run. If a run changes two things and the
+       accuracy moves, you have learned nothing about either one. We broke this
+       rule twice early on and it cost us, which we get into below.</p>
+    <p>The second was setting a noise floor before we started reading results. Our
+       validation set was 12,000 images. The standard error on an accuracy
+       estimate near 99% works out to roughly 0.09%, so any difference smaller
+       than about 0.2 percentage points is around 24 images and is not
+       distinguishable from randomness. Several of our runs moved the number by
+       less than that. We logged those as ties rather than improvements. This
+       probably saved us an afternoon of tuning toward noise.</p>
+  </section>
+
+  <section id="unjustified">
+    <h2>Taking out the choices we could not justify</h2>
+    <p>The inherited model had an L1 regularizer on both dense layers and a
+       softplus activation on the second one. Both of these were randomly
+       applied, and did not have a reason for the addition.</p>
+    <p>L1 regularization pushes weights to exactly zero. It is a sparsity tool,
+       which is why it shows up in LASSO, and sparsity was not what we wanted. We
+       wanted smooth generalization, and the tools for that are dropout and batch
+       normalization. The L1 penalties were working against the network rather
+       than for it. Softplus is a smoothed version of ReLU with no real advantage
+       on this problem and slightly worse gradient behavior, so that came out too.</p>
+    <p>Removing both of those, trimming the dense head down to one hidden layer,
+       and right-sizing the convolutions took us from 98.23% to 98.75% over three
+       runs.</p>
+    <p>This is where we broke our rules&mdash;runs 2 through 4 each changed more
+       than one thing, so we cannot cleanly say how much of that half point came
+       from any single edit. We are reporting the phase as a whole rather than
+       claiming attribution we cannot support.</p>
+  </section>
+
+  <section id="depth">
+    <h2>Adding depth</h2>
+    <p>The biggest single improvement in the whole project came from adding a
+       second convolutional block.</p>
+    <pre class="arch"><code>Conv(32) -&gt; Conv(32) -&gt; MaxPool   # 28x28 -&gt; 14x14
+Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
+    <p>That took us from 98.75% to 99.04%. Nothing else we tried moved the number
+       as much.</p>
+    <p>One convolutional block can only learn edges and strokes. A second block
+       gets to compose those strokes into larger parts, like loops, crossings, and
+       the closed upper region that is the difference between an 8 and a 3. With
+       only one block, the dense layer has to assemble all of those relationships
+       itself, and a fully connected layer is not good at that.</p>
+    <p>We also moved from 5x5 kernels down to 3x3. Two stacked 3x3 convolutions
+       cover the same receptive field as one 5x5, use fewer parameters, and get an
+       extra nonlinearity in between. More small filters beat fewer large ones,
+       which was also what our instructor suggested.</p>
+    <p>The third change in this phase was padding. Without padding, every 3x3
+       convolution takes two pixels off each dimension, so by the time we had four
+       convolutions and two pooling layers we were down to 4x4x32, which is 512
+       features reaching the classifier. Adding same padding means only the
+       pooling reduces size, so the image goes 28 to 14 to 7 and the flatten layer
+       gets 7x7x64, or 3,136 features. That is roughly six times more information
+       surviving to the dense layer, and it also made the arithmetic predictable
+       enough that we could work out the flatten size in our heads instead of
+       running summary every time.</p>
+    <p>After that we doubled the filters in block 2 from 32 to 64. That moved us
+       from 99.04% to 99.09%, which is inside our noise floor. We took that as a
+       signal that capacity was no longer the thing holding us back.</p>
+  </section>
+
+  <section id="problem-changed">
+    <h2>The problem changed</h2>
+    <p>Looking at the log, the accuracy column alone was not telling us much
+       anymore. The gap between training and validation was.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Train vs. validation accuracy (%) and the gap between them</caption>
+        <thead>
+          <tr><th scope="col">Model</th><th scope="col" class="num">Train</th><th scope="col" class="num">Validation</th><th scope="col" class="num">Gap</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">NModel4</th><td class="num">99.83</td><td class="num">98.75</td><td class="num">1.08</td></tr>
+          <tr><th scope="row">NModel5</th><td class="num">99.63</td><td class="num">99.04</td><td class="num">0.59</td></tr>
+          <tr><th scope="row">NModel6</th><td class="num">99.75</td><td class="num">99.09</td><td class="num">0.66</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Training accuracy had been sitting near 99.8% since the third run. The
+       model was not having any trouble learning the training set. It had done
+       that several runs earlier. At this point, we had solved the capacity
+       problem, clearly showing that our model could learn the training set. What
+       our next refinements would target would be generalization&mdash;closing the
+       performance gap between the training and validation sets.</p>
+  </section>
+
+  <section id="regularization">
+    <h2>Regularization</h2>
+    <p>Batch normalization on its own made things slightly worse. Adding it to
+       each convolutional block moved validation accuracy from 99.09% down to
+       98.91%. Because the drop was small, we kept that result in the log rather
+       than dropping it. What we eventually concluded is that batch normalization
+       was doing something useful, but conditionally. It stabilized training
+       enough that we could use heavier dropout later without the model failing to
+       converge. On its own it did not help.</p>
+    <p>Dropout in the convolutional blocks was where we found significant gains in
+       closing the gap. Twenty-five percent after each pooling layer got us to
+       99.22%. Pushing it to 30% held validation equal while pulling training
+       accuracy down from 99.71% to 99.42%, which was the gap closing.</p>
+    <p>Dropout in the dense head was the piece we had been missing. Our final
+       model had 468,202 parameters, and 403,000 of them, about 86%, were in the
+       single connection between the flatten layer and the Dense(128). That is
+       where memorization happens, so that is where the heaviest dropout belongs.
+       We added 40% dropout after the dense layer, raised the epochs to 50, and
+       got 99.44%.</p>
+  </section>
+
+  <section id="lessons">
+    <h2>Lessons learned</h2>
+    <p>The first time we added dropout we left the epoch count at 10, and dropout
+       looked like it made the model worse. It had not. Dropout randomly switches
+       off units during training, so each pass through the data teaches the model
+       less and it needs more passes to get to the same place. Ten epochs did not
+       allow for enough passes through to train the model. Raising the epochs to
+       50 showed the improvement that had been there the whole time. We saw that
+       most models seemed to level out somewhere between 30-40 epochs.</p>
+    <p>The lesson we took from that is that regularization strength and training
+       length are tied together. Changing one without the other gives you a
+       misleading answer, and we came close to writing off a good idea because of
+       it.</p>
+    <p>The second problem was subtler. Calling fit without rebuilding the model
+       first continues training from the weights that are already there instead of
+       starting over. One of our runs reported 50 epochs but was really running
+       epochs 51 through 100. We caught it because epoch 1 came back with 99.86%
+       training accuracy, which is impossible for a network that has not been
+       trained. A fresh model should start somewhere around 85 to 90%. After that
+       we rebuilt and recompiled the model before every single fit.</p>
+  </section>
+
+  <section id="final-training">
+    <h2>Final training</h2>
+    <p>Once the architecture was locked in, the validation split had done its job.
+       Holding back 12,000 images to answer a question we had already answered
+       just meant training on less data than we had, so we retrained the final
+       configuration on all 60,000 training images.</p>
+    <p>The one judgment call was the epoch count, because with no validation set
+       there is nothing for early stopping to watch. Validation loss during the
+       architecture search had flattened out around epoch 37 and had not diverged
+       by epoch 50, so we used 40.</p>
+    <pre class="arch"><code>Conv2D(32, 3x3, same) -&gt; Conv2D(32, 3x3, same)
+  -&gt; BatchNorm -&gt; MaxPool -&gt; Dropout(0.30)
+Conv2D(64, 3x3, same) -&gt; Conv2D(64, 3x3, same)
+  -&gt; BatchNorm -&gt; MaxPool -&gt; Dropout(0.30)
+Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</code></pre>
+    <p class="callout"><strong>Test accuracy: 99.52%.</strong> That is 48 misclassified
+       images out of 10,000.</p>
+  </section>
+
+  <section id="log">
+    <h2>The full log</h2>
+    <div class="table-wrap">
+      <table class="log-table">
+        <caption>Every run, in order. Accuracy columns are percentages.</caption>
+        <thead>
+          <tr><th scope="col">Model</th><th scope="col">What changed</th><th scope="col" class="num">Train</th><th scope="col" class="num">Val</th><th scope="col" class="num">Time</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">NModel</th><td>Inherited model: Conv(10, 5x5) twice, dense head with L1 and softplus</td><td class="num">98.50</td><td class="num">98.23</td><td class="num">12 min</td></tr>
+          <tr><th scope="row">NModel2</th><td>Dropped L1 and softplus</td><td class="num">99.61</td><td class="num">98.54</td><td class="num">14 min</td></tr>
+          <tr><th scope="row">NModel3</th><td>Dropped a dense layer, 3x3 kernels</td><td class="num">99.77</td><td class="num">98.55</td><td class="num">7 min</td></tr>
+          <tr><th scope="row">NModel4</th><td>Filters 10 to 32, epochs to 10</td><td class="num">99.83</td><td class="num">98.75</td><td class="num">30 sec (GPU introduced)</td></tr>
+          <tr class="key"><th scope="row">NModel5</th><td><strong>Second conv block and same padding</strong></td><td class="num">99.63</td><td class="num"><strong>99.04</strong></td><td class="num">32 sec</td></tr>
+          <tr><th scope="row">NModel6</th><td>Block 2 filters to 64</td><td class="num">99.75</td><td class="num">99.09</td><td class="num">53 sec</td></tr>
+          <tr><th scope="row">NModel7</th><td>Batch normalization in both, first block filters to 32</td><td class="num">99.85</td><td class="num">98.46</td><td class="num">52 sec</td></tr>
+          <tr><th scope="row">NModel8</th><td>Conv dropout 25%, epochs to 20</td><td class="num">99.69</td><td class="num">99.09</td><td class="num">1 min</td></tr>
+          <tr><th scope="row">NModel9</th><td>Conv dropout to 30%</td><td class="num">99.67</td><td class="num">99.30</td><td class="num">1 min</td></tr>
+          <tr class="key"><th scope="row">NModel10</th><td><strong>Dense dropout 40%, epochs to 50</strong></td><td class="num">99.68</td><td class="num"><strong>99.37</strong></td><td class="num">3 min</td></tr>
+          <tr class="key"><th scope="row">Final</th><td>Retrained on all 60,000, 40 epochs</td><td class="num">99.59</td><td class="num"><strong>99.52 test</strong></td><td class="num">&mdash;</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>One note on the time column. The first three runs were on CPU and
+       everything after that was on a GPU runtime. The drop from 7 minutes to 30
+       seconds between NModel3 and NModel4 is that switch, not anything to do with
+       the architecture.</p>
+  </section>
+
+  <section id="differently">
+    <h2>What we would do differently</h2>
+    <p>The two diagnostics we ran, counting where the parameters were and watching
+       the train/validation gap, were both free and both changed what we did next.
+       We ran the first one four runs in and the second one six runs in. If we had
+       run them at the start we could have gotten to the same model in about half
+       the runs.</p>
+    <p>However, our negative results turned out to be useful ones. Batch
+       normalization looked like a failure by itself and turned out to be a
+       prerequisite for the thing that actually worked. Dropout looked like a
+       failure because we had the epoch count wrong. Neither of those shows up in
+       a log that only records the runs that improved the number, and we would
+       have drawn the wrong conclusions from a cleaner looking log.</p>
+  </section>
+
+  <section id="architecture">
+    <h2>Final model architecture</h2>
+    <figure>
+      <img src="{% static 'classifier/images/final-model-diagram.png' %}"
+           alt="Diagram of the final network: a 28 by 28 by 1 input passes through two convolutional blocks (32 filters giving 14 by 14 by 32, then 64 filters giving 7 by 7 by 64), is flattened to 3,136 values, passes through a 128-unit dense layer, and ends in a 10-way softmax. Each convolutional stage is two 3 by 3 same-padded convolutions, batch normalization, 2 by 2 max pooling, and 0.30 dropout."
+           loading="lazy">
+      <figcaption>The final architecture: two convolutional blocks feeding a small classifier head.</figcaption>
+    </figure>
+
+    <div class="table-wrap">
+      <table class="layer-table">
+        <caption>Layer-by-layer summary</caption>
+        <thead>
+          <tr><th scope="col" class="num">#</th><th scope="col">Layer</th><th scope="col">Output shape</th><th scope="col" class="num">Parameters</th></tr>
+        </thead>
+        <tbody>
+          <tr><td class="num">&mdash;</td><th scope="row">Input</th><td>(28, 28, 1)</td><td class="num">0</td></tr>
+          <tr><td class="num">1</td><th scope="row">Conv2D &mdash; 32 filters, 3&times;3, same, ReLU</th><td>(28, 28, 32)</td><td class="num">320</td></tr>
+          <tr><td class="num">2</td><th scope="row">Conv2D &mdash; 32 filters, 3&times;3, same, ReLU</th><td>(28, 28, 32)</td><td class="num">9,248</td></tr>
+          <tr><td class="num">3</td><th scope="row">BatchNormalization</th><td>(28, 28, 32)</td><td class="num">128</td></tr>
+          <tr><td class="num">4</td><th scope="row">MaxPooling2D &mdash; 2&times;2, stride 2</th><td>(14, 14, 32)</td><td class="num">0</td></tr>
+          <tr><td class="num">5</td><th scope="row">Dropout &mdash; 0.30</th><td>(14, 14, 32)</td><td class="num">0</td></tr>
+          <tr><td class="num">6</td><th scope="row">Conv2D &mdash; 64 filters, 3&times;3, same, ReLU</th><td>(14, 14, 64)</td><td class="num">18,496</td></tr>
+          <tr><td class="num">7</td><th scope="row">Conv2D &mdash; 64 filters, 3&times;3, same, ReLU</th><td>(14, 14, 64)</td><td class="num">36,928</td></tr>
+          <tr><td class="num">8</td><th scope="row">BatchNormalization</th><td>(14, 14, 64)</td><td class="num">256</td></tr>
+          <tr><td class="num">9</td><th scope="row">MaxPooling2D &mdash; 2&times;2, stride 2</th><td>(7, 7, 64)</td><td class="num">0</td></tr>
+          <tr><td class="num">10</td><th scope="row">Dropout &mdash; 0.30</th><td>(7, 7, 64)</td><td class="num">0</td></tr>
+          <tr><td class="num">11</td><th scope="row">Flatten</th><td>(3136,)</td><td class="num">0</td></tr>
+          <tr><td class="num">12</td><th scope="row">Dense &mdash; 128 units, ReLU</th><td>(128,)</td><td class="num">401,536</td></tr>
+          <tr><td class="num">13</td><th scope="row">Dropout &mdash; 0.40</th><td>(128,)</td><td class="num">0</td></tr>
+          <tr><td class="num">14</td><th scope="row">Dense &mdash; 10 units, softmax</th><td>(10,)</td><td class="num">1,290</td></tr>
+        </tbody>
+        <tfoot>
+          <tr><th scope="row" colspan="3">Total parameters</th><td class="num"><strong>468,202</strong></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <p>Trainable parameters: <strong>468,010</strong> &middot; Non-trainable:
+       <strong>192</strong> (BatchNormalization moving averages)</p>
+    <p>Convolutional layers account for 65,376 parameters (14%) and the classifier
+       head for 402,826 (86%). The single Dense(128) connection alone holds
+       401,536 of the total, which is why the heaviest dropout rate is placed
+       there.</p>
+
+    <h3>Training configuration</h3>
+    <div class="table-wrap">
+      <table class="config-table">
+        <tbody>
+          <tr><th scope="row">Optimizer</th><td>Adam (default learning rate 0.001)</td></tr>
+          <tr><th scope="row">Loss</th><td>Sparse categorical crossentropy</td></tr>
+          <tr><th scope="row">Batch size</th><td>200</td></tr>
+          <tr><th scope="row">Epochs</th><td>40</td></tr>
+          <tr><th scope="row">Training data</th><td>All 60,000 MNIST training images (no validation split)</td></tr>
+          <tr><th scope="row">Test accuracy</th><td>99.52%</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ====================== PART 2: ERROR ANALYSIS ====================== -->
+
+  <div class="part-divider">
+    <h2 class="part-title">Error Analysis</h2>
+    <p class="writeup-subtitle">Group Project 1 &mdash; MNIST Image Classification</p>
+  </div>
+
+  <section id="examples">
+    <h2>Well classified and misclassified examples</h2>
+    <p>Our final model classified 9,952 of the 10,000 test images correctly and
+       got 48 wrong. Because 48 is a small enough number to inspect individually,
+       we looked at every one of them rather than sampling.</p>
+    <p>We sorted both sets by the model's own confidence rather than showing a
+       random selection. Sorting this way separates two different kinds of
+       behavior. The most confident correct predictions show us what the model
+       considers an easy case. The most confident errors show us where the model
+       was certain and still wrong, which is a much more interesting failure than
+       a case where it was simply unsure.</p>
+
+    <h3>What the model finds easy</h3>
+    <figure>
+      <img src="{% static 'classifier/images/confident-correct.png' %}"
+           alt="Grid of eighteen test-set digits the model classified correctly, each with confidence 1.000. Digits shown include 1, 9, 2, 6, 5, 3, 7, 8, and 0; all are centered with thick, even strokes."
+           loading="lazy">
+      <figcaption>The eighteen most confident correct predictions.</figcaption>
+    </figure>
+    <p>Every image in the confidently correct grid came back at a confidence of
+       1.000, which means the softmax assigned essentially all of its probability
+       to a single class. These digits share a set of properties:</p>
+    <p>They are centered in the frame with consistent margins. Stroke width is even
+       and thick enough to survive downsampling. The loops that define a digit are
+       unambiguously open or closed, so there is no question whether a 9 has a
+       sealed head or whether a 6 has a closed bottom. The overall shape matches
+       the canonical form of the digit rather than a personal variation. None of
+       them are unusually slanted.</p>
+    <p>One thing we noticed in the confidently correct set is that 4s are
+       characteristically absent. The eighteen most confident correct predictions
+       include multiple 9s, 3s and 2s but not a single 4. This is consistent with
+       what the confusion matrix shows later: 4 and 9 are the pair the model is
+       least sure about, so even the 4s it gets right are classified with a little
+       less certainty than other digits.</p>
+
+    <h3>What the model gets wrong</h3>
+    <figure>
+      <img src="{% static 'classifier/images/confident-errors.png' %}"
+           alt="Grid of eighteen test-set digits the model misclassified with confidence between 0.98 and 1.00. Examples include a thin diagonal 7 predicted as 1, a 4 with a closed top predicted as 9, and a thick 3 with two closed loops predicted as 8."
+           loading="lazy">
+      <figcaption>The eighteen most confident misclassifications.</figcaption>
+    </figure>
+    <p>The misclassified images look nothing like the correct ones. They fall into
+       three groups.</p>
+    <p><strong>Broken or incomplete strokes.</strong> Several of these digits are
+       drawn so thinly or so faintly that after downsampling the stroke is
+       fragmented into disconnected pixels. One image labeled as a 7 is barely
+       more than a diagonal smear with a gap in the middle, and the model called
+       it a 1. The defining feature of the digit was not preserved in the image.</p>
+    <p><strong>Ambiguous loop closure.</strong> A number of the errors hinge on
+       whether a single loop is open or closed. A 4 with its top corner touching
+       becomes a 9. A 9 whose upper bowl does not quite meet becomes a 4. A 6
+       whose tail crosses back over itself becomes an 8. In each case the
+       difference between the two digits is a few pixels in one location.</p>
+    <p><strong>Unusual handwriting.</strong> The remaining errors are digits
+       written in ways that are technically legible but far from the canonical
+       form. One 3 in the set is so thick and rounded that both of its curves
+       close into loops, which is the definition of an 8. One 5 is written as a
+       single continuous S shape with no horizontal bar at the top.</p>
+    <p>The bottom line is that a meaningful portion of these 48 images are ones a
+       person would also hesitate over. We discuss that further in the section on
+       <a href="#perfect">whether 100 percent accuracy is achievable</a>.</p>
+  </section>
+
+  <section id="confusions">
+    <h2>Common confusions and why they occur</h2>
+    <figure>
+      <img src="{% static 'classifier/images/confusion-matrix.png' %}"
+           alt="Heat map of test-set errors by actual digit (rows) and predicted digit (columns), diagonal excluded from the color scale. The darkest cells are 9 predicted as 4 (5 errors) and 5 predicted as 3 (4 errors)."
+           loading="lazy">
+      <figcaption>Confusion matrix for the test set. Darker cells mean more errors.</figcaption>
+    </figure>
+    <p>The confusion matrix accounts for all 48 errors. The ten most frequent
+       mistakes are below.</p>
+
+    <div class="table-wrap">
+      <table class="narrow-table">
+        <caption>Ten most frequent mistakes</caption>
+        <thead>
+          <tr><th scope="col">Actual</th><th scope="col">Predicted</th><th scope="col" class="num">Count</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>9</td><td>4</td><td class="num">5</td></tr>
+          <tr><td>5</td><td>3</td><td class="num">4</td></tr>
+          <tr><td>6</td><td>8</td><td class="num">3</td></tr>
+          <tr><td>6</td><td>1</td><td class="num">3</td></tr>
+          <tr><td>3</td><td>5</td><td class="num">3</td></tr>
+          <tr><td>9</td><td>8</td><td class="num">2</td></tr>
+          <tr><td>9</td><td>3</td><td class="num">2</td></tr>
+          <tr><td>7</td><td>2</td><td class="num">2</td></tr>
+          <tr><td>7</td><td>1</td><td class="num">2</td></tr>
+          <tr><td>4</td><td>9</td><td class="num">2</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p>Two of these are not independent errors but two halves of the same
+       underlying confusion.</p>
+
+    <h3>The 3 and 5 cluster</h3>
+    <p>The model called a 3 a 5 three times and called a 5 a 3 four times, for
+       seven errors between them. This is the single largest source of error in
+       the model and it runs in both directions, which tells us the two digits are
+       genuinely entangled rather than one simply being harder than the other.</p>
+    <p>Structurally, a 3 and a 5 share almost everything. Both have a horizontal
+       component at the top, both have a large curve opening to the left at the
+       bottom, and both occupy the same region of the frame. The difference is
+       confined to the upper left: a 5 has a vertical stroke descending into a
+       horizontal bar, while a 3 has an outward curve. When a 5 is written quickly
+       the top bar often curves, and at that point the two digits differ by a
+       handful of pixels in one corner.</p>
+
+    <h3>The 4 and 9 cluster</h3>
+    <p>The model called a 9 a 4 five times and called a 4 a 9 twice, for seven
+       errors. Unlike the 3 and 5 case, this one is asymmetric. The model is more
+       than twice as likely to read a 9 as a 4 than the reverse.</p>
+    <p>The distinguishing feature here is a single property: whether the upper loop
+       is closed. A 9 has a sealed head sitting on a vertical stroke. A 4 has an
+       open angular junction in the same position with a descender below it. If a
+       9 is written with a small gap at the top of its head, the remaining shape
+       is a 4. The asymmetry makes sense given how people write: leaving a loop
+       slightly open is a common result of writing fast, while accidentally
+       sealing the open corner of a 4 requires overshooting the stroke, which
+       happens less often.</p>
+
+    <h3>Why the model loses this information</h3>
+    <p>Both clusters depend on a small, local detail rather than on overall shape,
+       and that is exactly the kind of feature a convolutional network is
+       structured to discard.</p>
+    <p>Our architecture applies two rounds of 2x2 max pooling, taking the
+       representation from 28 by 28 down to 14 by 14 and then to 7 by 7. Max
+       pooling deliberately gives up spatial precision in exchange for translation
+       invariance, which is what makes the model robust to a digit being written
+       slightly off center. The cost is that by the seventh row and column of the
+       final feature map, each cell summarizes a 4 by 4 region of the original
+       image. A two-pixel gap at the top of a 9 sits entirely inside one of those
+       cells and may not survive the pooling operation. The model is built to stop
+       looking that closely, and that same property is what gives it 99.5 percent
+       accuracy on everything else.</p>
+
+    <h3>Per digit error rates</h3>
+    <p>Error counts on their own are misleading because the test set does not
+       contain equal numbers of each digit. The table below normalizes by how
+       often each digit actually appears.</p>
+
+    <div class="table-wrap">
+      <table>
+        <caption>Error rate by digit on the 10,000-image test set</caption>
+        <thead>
+          <tr><th scope="col">Digit</th><th scope="col" class="num">Errors</th><th scope="col" class="num">Test images</th><th scope="col" class="num">Error rate</th><th scope="col" class="num">Times wrongly predicted</th></tr>
+        </thead>
+        <tbody>
+          <tr><th scope="row">0</th><td class="num">3</td><td class="num">980</td><td class="num">0.31%</td><td class="num">3</td></tr>
+          <tr><th scope="row">1</th><td class="num">2</td><td class="num">1,135</td><td class="num">0.18%</td><td class="num">5</td></tr>
+          <tr><th scope="row">2</th><td class="num">2</td><td class="num">1,032</td><td class="num">0.19%</td><td class="num">5</td></tr>
+          <tr><th scope="row">3</th><td class="num">5</td><td class="num">1,010</td><td class="num">0.50%</td><td class="num">8</td></tr>
+          <tr><th scope="row">4</th><td class="num">3</td><td class="num">982</td><td class="num">0.31%</td><td class="num">6</td></tr>
+          <tr><th scope="row">5</th><td class="num">7</td><td class="num">892</td><td class="num">0.78%</td><td class="num">4</td></tr>
+          <tr><th scope="row">6</th><td class="num">9</td><td class="num">958</td><td class="num">0.94%</td><td class="num">3</td></tr>
+          <tr><th scope="row">7</th><td class="num">7</td><td class="num">1,028</td><td class="num">0.68%</td><td class="num">1</td></tr>
+          <tr><th scope="row">8</th><td class="num">1</td><td class="num">974</td><td class="num">0.10%</td><td class="num">9</td></tr>
+          <tr><th scope="row">9</th><td class="num">9</td><td class="num">1,009</td><td class="num">0.89%</td><td class="num">4</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p><strong>The hardest digit to recognize is 6</strong>, at a 0.94 percent error
+       rate, followed closely by 9 at 0.89 percent. The 6 errors are unusual in
+       that they scatter across five different wrong answers rather than
+       concentrating on one, which suggests the problem is not a single confusable
+       neighbor but that 6 is written in a wider variety of ways than other
+       digits.</p>
+    <p><strong>The easiest digit is 8</strong>, with a single error out of 974
+       images, a rate of 0.10 percent. This surprised us, because 8 has the most
+       complex shape of any digit and we expected it to be among the hardest. The
+       complexity appears to work in its favor. Two stacked closed loops is a
+       distinctive signature that nothing else in the digit set resembles, so once
+       the model sees it there is little to confuse it with.</p>
+
+    <h3>The 8 is a sink for uncertainty</h3>
+    <p>The last column of the table above reveals something interesting that is not
+       obvious when looking at only the error rate. While 8 is almost never
+       misread as something else, it is the answer the model gives most often when
+       it is wrong. Nine of the 48 errors were images of other digits predicted as
+       8, more than for any other class.</p>
+    <p>Digits 3, 4, 6, 7 and 9 were all misread as 8 at least once. The common
+       factor is that when a digit is written thickly enough for its strokes to
+       merge, or when an open curve closes accidentally, the resulting blob has the
+       loop structure that defines an 8. The model appears to treat closed loops as
+       strong evidence for 8, which is correct almost all of the time and produces
+       these errors in the small number of cases where the loops are artifacts of
+       thick handwriting rather than intentional.</p>
+    <p>The mirror image of this is the digit 7, which was the predicted answer for
+       only one error in the entire test set. Whatever features the model uses to
+       identify a 7 are ones that other digits rarely trigger by accident.</p>
+  </section>
+
+  <section id="perfect">
+    <h2>Is 100 percent accuracy possible?</h2>
+    <p class="callout">Our answer is no&mdash;based on the dataset and the variance in
+       handwriting, 100% accuracy is not possible.</p>
+
+    <h3>The limit is in the data</h3>
+    <p>Every dataset has some level of error that no model can go below, because
+       some of the inputs do not contain enough information to determine the
+       answer. For MNIST this shows up in three forms.</p>
+    <p><strong>Some images are genuinely ambiguous.</strong> Looking through our 48
+       errors, a number of them are digits that two people would label
+       differently. If the image does not contain enough information for a human
+       to decide, there is nothing for the model to learn that would fix it.</p>
+    <p><strong>Some labels are wrong.</strong> MNIST was assembled by having people
+       write digits and recording what they were asked to write. Where a writer
+       produced a malformed character, the label records the intent rather than
+       what actually appeared on the page. A model that learns the true shape of a
+       4 will disagree with the label on an image where someone drew something
+       closer to a 9, and it will be penalized for being right.</p>
+    <p><strong>The format itself discards information.</strong> Each image is a 28
+       by 28 grayscale grid. A person writing the original digit had stroke order,
+       pressure, pen lift and full resolution available. All of that is gone by
+       the time the image reaches the model. Several of our errors involve strokes
+       so thin that downsampling broke them into disconnected fragments, and the
+       information needed to reconnect them does not exist anywhere in the file.</p>
+
+    <h3>What the evidence in our own results shows</h3>
+    <p>The most direct evidence sits in our own confident error grid. Those images
+       were misclassified with confidence at or near 1.00, meaning the model was
+       not hesitating. It looked at the image, found strong evidence for the wrong
+       answer, and committed.</p>
+    <p>This matters because there are two different reasons a model can be wrong.
+       If it is wrong while uncertain, the signal was there and the model failed
+       to weigh it correctly, which is a problem more training or a better
+       architecture could fix. If it is wrong while certain, the image genuinely
+       looks like the wrong answer, and the fix would have to be a model that
+       disagrees with the visual evidence in front of it. Our errors are
+       overwhelmingly of the second kind.</p>
+
+    <h3>Where that leaves us</h3>
+    <p>Our 99.52 percent leaves 48 errors. We would estimate that a stronger
+       approach, using augmentation and an ensemble, could recover perhaps half of
+       them, since those techniques mainly help with unusual but legible
+       handwriting. The remaining images are ones where the label and the picture
+       disagree, and no amount of modeling resolves that.</p>
+    <p>A more useful goal than 100 percent accuracy would be a model that is well
+       calibrated: one that is confident when it is right and appropriately
+       uncertain when the image is ambiguous. By that standard our model has room
+       to improve, because the errors it makes are ones it makes confidently. A
+       model that had flagged those 48 images as uncertain would be more useful in
+       practice than one that got a few more of them right while remaining equally
+       overconfident about the rest.</p>
+  </section>
+
+  <p class="writeup-footer-cta"><a href="{% url 'classify' %}">Try the classifier &rarr;</a></p>
+
+</article>
 {% endblock %}
