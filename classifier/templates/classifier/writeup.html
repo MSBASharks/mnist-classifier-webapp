@@ -275,7 +275,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   <section id="architecture">
     <h2>Final Model Architecture</h2>
     <figure>
-      <img src="{% static 'images/final-model-diagram.png' %}"
+      <img src="{% static 'classifier/images/final-model-diagram.png' %}"
            alt="Diagram of the final network: a 28 by 28 by 1 input passes through two convolutional blocks (32 filters giving 14 by 14 by 32, then 64 filters giving 7 by 7 by 64), is flattened to 3,136 values, passes through a 128-unit dense layer, and ends in a 10-way softmax. Each convolutional stage is two 3 by 3 same-padded convolutions, batch normalization, 2 by 2 max pooling, and 0.30 dropout."
            loading="lazy">
       <figcaption>The final architecture: two convolutional blocks feeding a small classifier head.</figcaption>
@@ -353,7 +353,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
 
     <h3>What The Model Finds Easy</h3>
     <figure>
-      <img src="{% static 'images/confident-correct.png' %}"
+      <img src="{% static 'classifier/images/confident-correct.png' %}"
            alt="Grid of eighteen test-set digits the model classified correctly, each with confidence 1.000. Digits shown include 1, 9, 2, 6, 5, 3, 7, 8, and 0; all are centered with thick, even strokes."
            loading="lazy">
       <figcaption>The eighteen most confident correct predictions.</figcaption>
@@ -376,7 +376,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
 
     <h3>What The Model Gets Wrong</h3>
     <figure>
-      <img src="{% static 'images/confident-errors.png' %}"
+      <img src="{% static 'classifier/images/confident-errors.png' %}"
            alt="Grid of eighteen test-set digits the model misclassified with confidence between 0.98 and 1.00. Examples include a thin diagonal 7 predicted as 1, a 4 with a closed top predicted as 9, and a thick 3 with two closed loops predicted as 8."
            loading="lazy">
       <figcaption>The eighteen most confident misclassifications.</figcaption>
@@ -406,7 +406,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   <section id="confusions">
     <h2>Common Confusions And Why They Occur</h2>
     <figure>
-      <img src="{% static 'images/confusion-matrix.png' %}"
+      <img src="{% static 'classifier/images/confusion-matrix.png' %}"
            alt="Heat map of test-set errors by actual digit (rows) and predicted digit (columns), diagonal excluded from the color scale. The darkest cells are 9 predicted as 4 (5 errors) and 5 predicted as 3 (4 errors)."
            loading="lazy">
       <figcaption>Confusion matrix for the test set. Darker cells mean more errors.</figcaption>
