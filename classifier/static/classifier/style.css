@@ -1,40 +1,89 @@
+/* ==========================================================================
+   Dark theme. All colors live in :root variables, so retheming = edit here.
+   ========================================================================== */
+
+:root {
+    color-scheme: dark;            /* dark scrollbars + native form controls */
+    --bg:        #0f1419;          /* page background */
+    --surface:   #182029;          /* cards / sections */
+    --surface-2: #1f2933;          /* nested: nav, code blocks, table headers */
+    --border:    #2d3a47;
+    --text:      #e6e9ed;
+    --muted:     #9aa5b1;
+    --accent:    #60a5fa;          /* links, headings, borders of callouts */
+    --accent-btn:#2563eb;          /* button fill (white text stays readable) */
+    --accent-btn-hover: #1d4fd8;
+    --accent-bg: #16263d;          /* callouts / highlighted table rows */
+    --error-bg:  #3b1a1a;
+    --error-text:#fca5a5;
+}
+
 body {
     font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
     margin: 0;
-    background: #f7f7f9;
-    color: #222;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
 }
 
+a { color: var(--accent); }
+
+/* Centered headings site-wide (body paragraphs stay left-aligned for readability) */
+h1, h2 { text-align: center; }
+
+/* ---------- Navigation ---------- */
+
 .topnav {
-    background: #1f2933;
-    color: white;
+    background: var(--surface-2);
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
     padding: 0.75rem 1.5rem;
     display: flex;
-    gap: 1.25rem;
+    flex-wrap: wrap;
+    gap: 1.5rem;
     align-items: center;
+    justify-content: center;       /* centered nav */
 }
 
 .topnav .brand {
     font-weight: 600;
-    margin-right: auto;
 }
 
 .topnav a {
-    color: #cbd2d9;
+    color: var(--muted);
     text-decoration: none;
 }
 
 .topnav a:hover {
-    color: white;
+    color: var(--text);
 }
 
+/* ---------- Main content card ---------- */
+
 .content {
-    max-width: 720px;
+    max-width: 760px;
     margin: 2rem auto;
-    background: white;
+    background: var(--surface);
+    border: 1px solid var(--border);
     padding: 2rem;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border-radius: 10px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* The write-up page draws its own section cards, so drop the outer card there
+   (avoids a card inside a card). */
+.content:has(.writeup) {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding: 0 1rem;
+}
+
+/* ---------- Forms ---------- */
+
+.stacked-form {
+    max-width: 380px;
+    margin: 0 auto;                /* centered form */
 }
 
 .stacked-form label {
@@ -46,20 +95,40 @@ body {
 .stacked-form input {
     display: block;
     margin-top: 0.25rem;
-    padding: 0.4rem;
+    padding: 0.45rem;
     width: 100%;
     box-sizing: border-box;
+    background: var(--surface-2);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 4px;
 }
+
+.stacked-form input:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
+/* Django's form.as_p renders each field in a <p>; keep them tidy */
+.stacked-form p { margin: 0.75rem 0; }
 
 button {
     margin-top: 1rem;
     padding: 0.5rem 1.25rem;
-    background: #2563eb;
+    background: var(--accent-btn);
     color: white;
     border: none;
     border-radius: 4px;
     cursor: pointer;
 }
+
+button:hover {
+    background: var(--accent-btn-hover);
+}
+
+.stacked-form button { display: block; margin-left: auto; margin-right: auto; }
+
+/* ---------- Messages ---------- */
 
 .alert {
     padding: 0.75rem 1rem;
@@ -68,19 +137,28 @@ button {
 }
 
 .alert-error {
-    background: #fde2e1;
-    color: #7a1f1a;
+    background: var(--error-bg);
+    color: var(--error-text);
+    border: 1px solid #5c2b2b;
 }
+
+/* ---------- Classify result ---------- */
 
 .result-panel {
     margin-top: 2rem;
-    padding-top: 1.5rem;
-    border-top: 1px solid #e5e7eb;
+    padding: 1.5rem;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    text-align: center;
 }
+
+.result-panel h2 { margin-top: 0; }
 
 .digit-preview {
     image-rendering: pixelated;
-    border: 1px solid #ccc;
+    border: 1px solid var(--border);
+    background: #000;
 }
 
 .prediction {
@@ -88,13 +166,13 @@ button {
 }
 
 .confidence {
-    color: #6b7280;
+    color: var(--muted);
     font-size: 0.9rem;
 }
 
 .footer {
     text-align: center;
-    color: #9ca3af;
+    color: var(--muted);
     font-size: 0.85rem;
     margin: 2rem 0;
 }
@@ -105,13 +183,12 @@ button {
    ========================================================================== */
 
 .writeup {
-  --wu-text: #222;
-  --wu-muted: #6b7280;
-  --wu-accent: #2563eb;
-  --wu-border: #e5e7eb;
-  --wu-surface: #f7f7f9;
-  --wu-highlight: #eaf1fe;
-  /* sits inside .content (720px white card), so no extra width/padding */
+  --wu-text: var(--text);
+  --wu-muted: var(--muted);
+  --wu-accent: var(--accent);
+  --wu-border: var(--border);
+  --wu-surface: var(--surface-2);
+  --wu-highlight: var(--accent-bg);
   padding: 0;
   color: var(--wu-text);
   line-height: 1.65;
@@ -120,25 +197,36 @@ button {
 .writeup h1 { font-size: 2.2rem; line-height: 1.2; margin: 0 0 .25rem; }
 .writeup h2 {
   font-size: 1.55rem;
-  margin: 2.75rem 0 .75rem;
+  margin: 0 0 .75rem;
   padding-bottom: .3rem;
-  border-bottom: 2px solid var(--wu-border);
+  border-bottom: 0;
+  color: var(--wu-accent);
   scroll-margin-top: 1rem;
 }
 .writeup h3 { font-size: 1.2rem; margin: 2rem 0 .5rem; }
 .writeup p  { margin: 0 0 1rem; }
 .writeup a  { color: var(--wu-accent); }
 
-.writeup-header { margin-bottom: 1.5rem; }
+.writeup-header { margin-bottom: 1.5rem; text-align: center; }
 .writeup-subtitle { color: var(--wu-muted); font-size: 1.1rem; margin: 0 0 .75rem; }
-.writeup-cta, .writeup-footer-cta { font-weight: 600; }
+.writeup-cta, .writeup-footer-cta { font-weight: 600; text-align: center; }
 .writeup-footer-cta { margin-top: 3rem; }
+
+/* Each major section is its own centered card */
+.writeup section {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.5rem 2rem;
+  margin: 1.5rem 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
 
 /* Table of contents */
 .writeup-toc {
-  background: var(--wu-surface);
+  background: var(--surface);
   border: 1px solid var(--wu-border);
-  border-radius: 8px;
+  border-radius: 10px;
   padding: 1rem 1.5rem;
   margin-bottom: 2rem;
 }
@@ -152,6 +240,7 @@ button {
   margin: 4rem 0 0;
   padding: 1.5rem 0 0;
   border-top: 4px solid var(--wu-accent);
+  text-align: center;
 }
 .part-divider .part-title { border: 0; margin: 0 0 .25rem; padding: 0; font-size: 1.9rem; }
 
@@ -178,7 +267,7 @@ button {
   font-size: 1.1rem;
 }
 
-/* Figures */
+/* Figures (the PNG charts have white backgrounds, so keep them framed) */
 .writeup figure { margin: 1.5rem 0; }
 .writeup figure img {
   display: block;
@@ -186,7 +275,7 @@ button {
   height: auto;
   margin: 0 auto;
   border: 1px solid var(--wu-border);
-  border-radius: 4px;
+  border-radius: 6px;
   background: #fff;
 }
 .writeup figcaption {
@@ -221,14 +310,14 @@ button {
 .writeup tbody th { font-weight: 600; }
 .writeup .num { text-align: right; font-variant-numeric: tabular-nums; }
 .writeup thead th.num { text-align: right; }
-.writeup tbody tr:nth-child(even) { background: #fbfbfc; }
+.writeup tbody tr:nth-child(even) { background: rgba(255, 255, 255, 0.03); }
 .writeup tr.key, .writeup tr.key:nth-child(even) { background: var(--wu-highlight); }
 .writeup tfoot th, .writeup tfoot td {
   border-top: 2px solid var(--wu-border);
   border-bottom: 0;
   background: var(--wu-surface);
 }
-.writeup .narrow-table { max-width: 24rem; }
+.writeup .narrow-table { max-width: 24rem; margin-left: auto; margin-right: auto; }
 .writeup .config-table th { width: 10rem; background: var(--wu-surface); }
 .writeup .log-table td:nth-child(2) { min-width: 16rem; }
 
@@ -236,6 +325,7 @@ button {
 @media (max-width: 600px) {
   .writeup h1 { font-size: 1.75rem; }
   .writeup h2 { font-size: 1.35rem; }
+  .writeup section { padding: 1.25rem 1rem; }
   .writeup-toc ol { columns: 1; }
 }
 
@@ -243,4 +333,3 @@ button {
   .writeup-toc, .writeup-cta, .writeup-footer-cta { display: none; }
   .writeup figure, .writeup table { break-inside: avoid; }
 }
-
