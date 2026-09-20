@@ -5,35 +5,35 @@
 <article class="writeup">
 
   <header class="writeup-header">
-    <h1>How We Built the Model</h1>
+    <h1>How We Built the Model</h1>F
     <p class="writeup-subtitle">Group Project 1 &mdash; MNIST Image Classification</p>
-    <p class="writeup-cta"><a href="{% url 'classify' %}">Try the classifier &rarr;</a></p>
+    <p class="writeup-cta"><a href="{% url 'classify' %}">Try the Classifier &rarr;</a></p>
   </header>
 
   <nav class="writeup-toc" aria-label="On this page">
-    <h2>On this page</h2>
+    <h2>On This Page</h2>
     <ol>
-      <li><a href="#start">Where we started</a></li>
-      <li><a href="#search">How we ran the search</a></li>
-      <li><a href="#unjustified">Taking out the choices we could not justify</a></li>
-      <li><a href="#depth">Adding depth</a></li>
-      <li><a href="#problem-changed">The problem changed</a></li>
+      <li><a href="#start">Where We Started</a></li>
+      <li><a href="#search">How We Ran The Search</a></li>
+      <li><a href="#unjustified">Taking Out The Choices We Could Not Justify</a></li>
+      <li><a href="#depth">Adding Depth</a></li>
+      <li><a href="#problem-changed">The Problem Changed</a></li>
       <li><a href="#regularization">Regularization</a></li>
-      <li><a href="#lessons">Lessons learned</a></li>
-      <li><a href="#final-training">Final training</a></li>
-      <li><a href="#log">The full log</a></li>
-      <li><a href="#differently">What we would do differently</a></li>
-      <li><a href="#architecture">Final model architecture</a></li>
-      <li><a href="#examples">Well classified and misclassified examples</a></li>
-      <li><a href="#confusions">Common confusions and why they occur</a></li>
-      <li><a href="#perfect">Is 100 percent accuracy possible?</a></li>
+      <li><a href="#lessons">Lessons Learned</a></li>
+      <li><a href="#final-training">Final Training</a></li>
+      <li><a href="#log">The Full Log</a></li>
+      <li><a href="#differently">What We Would Do Differently</a></li>
+      <li><a href="#architecture">Final Model Architecture</a></li>
+      <li><a href="#examples">Well Classified and Misclassified Examples</a></li>
+      <li><a href="#confusions">Common Confusions And Why They Occur</a></li>
+      <li><a href="#perfect">Is 100 percent Accuracy Possible?</a></li>
     </ol>
   </nav>
 
   <!-- ====================== PART 1: THE MODEL ====================== -->
 
   <section id="start">
-    <h2>Where we started</h2>
+    <h2>Where We Started</h2>
     <p>Our team started with a base network from a previous homework assignment.
        It had convolutional layers in it, so on paper it was a convolutional network:</p>
     <pre class="arch"><code>Conv2D(10 filters, 5x5) -&gt; Conv2D(10 filters, 5x5) -&gt; MaxPool
@@ -68,7 +68,7 @@
   </section>
 
   <section id="search">
-    <h2>How we ran the search</h2>
+    <h2>How We Ran The Search</h2>
     <p>We did not grid search. We had eight or so hyperparameters we cared about,
        and even three values each would have meant thousands of training runs.
        Instead we changed one thing at a time, trained, logged the result, kept
@@ -89,7 +89,7 @@
   </section>
 
   <section id="unjustified">
-    <h2>Taking out the choices we could not justify</h2>
+    <h2>Taking Out The Choices We Could Not Justify</h2>
     <p>The inherited model had an L1 regularizer on both dense layers and a
        softplus activation on the second one. Both of these were randomly
        applied, and did not have a reason for the addition.</p>
@@ -109,7 +109,7 @@
   </section>
 
   <section id="depth">
-    <h2>Adding depth</h2>
+    <h2>Adding Depth</h2>
     <p>The biggest single improvement in the whole project came from adding a
        second convolutional block.</p>
     <pre class="arch"><code>Conv(32) -&gt; Conv(32) -&gt; MaxPool   # 28x28 -&gt; 14x14
@@ -140,7 +140,7 @@ Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
   </section>
 
   <section id="problem-changed">
-    <h2>The problem changed</h2>
+    <h2>The Problem Changed</h2>
     <p>Looking at the log, the accuracy column alone was not telling us much
        anymore. The gap between training and validation was.</p>
 
@@ -188,7 +188,7 @@ Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
   </section>
 
   <section id="lessons">
-    <h2>Lessons learned</h2>
+    <h2>Lessons Learned</h2>
     <p>The first time we added dropout we left the epoch count at 10, and dropout
        looked like it made the model worse. It had not. Dropout randomly switches
        off units during training, so each pass through the data teaches the model
@@ -210,7 +210,7 @@ Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
   </section>
 
   <section id="final-training">
-    <h2>Final training</h2>
+    <h2>Final Training</h2>
     <p>Once the architecture was locked in, the validation split had done its job.
        Holding back 12,000 images to answer a question we had already answered
        just meant training on less data than we had, so we retrained the final
@@ -229,7 +229,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   </section>
 
   <section id="log">
-    <h2>The full log</h2>
+    <h2>The Full Log</h2>
     <div class="table-wrap">
       <table class="log-table">
         <caption>Every run, in order. Accuracy columns are percentages.</caption>
@@ -258,7 +258,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   </section>
 
   <section id="differently">
-    <h2>What we would do differently</h2>
+    <h2>What We Would Do Differently</h2>
     <p>The two diagnostics we ran, counting where the parameters were and watching
        the train/validation gap, were both free and both changed what we did next.
        We ran the first one four runs in and the second one six runs in. If we had
@@ -273,9 +273,9 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   </section>
 
   <section id="architecture">
-    <h2>Final model architecture</h2>
+    <h2>Final Model Architecture</h2>
     <figure>
-      <img src="{% static 'images/final-model-diagram.png' %}"
+      <img src="{% static 'classifier/images/final-model-diagram.png' %}"
            alt="Diagram of the final network: a 28 by 28 by 1 input passes through two convolutional blocks (32 filters giving 14 by 14 by 32, then 64 filters giving 7 by 7 by 64), is flattened to 3,136 values, passes through a 128-unit dense layer, and ends in a 10-way softmax. Each convolutional stage is two 3 by 3 same-padded convolutions, batch normalization, 2 by 2 max pooling, and 0.30 dropout."
            loading="lazy">
       <figcaption>The final architecture: two convolutional blocks feeding a small classifier head.</figcaption>
@@ -317,7 +317,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        401,536 of the total, which is why the heaviest dropout rate is placed
        there.</p>
 
-    <h3>Training configuration</h3>
+    <h3>Training Configuration</h3>
     <div class="table-wrap">
       <table class="config-table">
         <tbody>
@@ -340,7 +340,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   </div>
 
   <section id="examples">
-    <h2>Well classified and misclassified examples</h2>
+    <h2>Well Classified And Misclassified Examples</h2>
     <p>Our final model classified 9,952 of the 10,000 test images correctly and
        got 48 wrong. Because 48 is a small enough number to inspect individually,
        we looked at every one of them rather than sampling.</p>
@@ -351,9 +351,9 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        was certain and still wrong, which is a much more interesting failure than
        a case where it was simply unsure.</p>
 
-    <h3>What the model finds easy</h3>
+    <h3>What The Model Finds Easy</h3>
     <figure>
-      <img src="{% static 'images/confident-correct.png' %}"
+      <img src="{% static 'classifier/images/confident-correct.png' %}"
            alt="Grid of eighteen test-set digits the model classified correctly, each with confidence 1.000. Digits shown include 1, 9, 2, 6, 5, 3, 7, 8, and 0; all are centered with thick, even strokes."
            loading="lazy">
       <figcaption>The eighteen most confident correct predictions.</figcaption>
@@ -374,9 +374,9 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        least sure about, so even the 4s it gets right are classified with a little
        less certainty than other digits.</p>
 
-    <h3>What the model gets wrong</h3>
+    <h3>What The Model Gets Wrong</h3>
     <figure>
-      <img src="{% static 'images/confident-errors.png' %}"
+      <img src="{% static 'classifier/images/confident-errors.png' %}"
            alt="Grid of eighteen test-set digits the model misclassified with confidence between 0.98 and 1.00. Examples include a thin diagonal 7 predicted as 1, a 4 with a closed top predicted as 9, and a thick 3 with two closed loops predicted as 8."
            loading="lazy">
       <figcaption>The eighteen most confident misclassifications.</figcaption>
@@ -404,9 +404,9 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   </section>
 
   <section id="confusions">
-    <h2>Common confusions and why they occur</h2>
+    <h2>Common Confusions And Why They Occur</h2>
     <figure>
-      <img src="{% static 'images/confusion-matrix.png' %}"
+      <img src="{% static 'classifier/images/confusion-matrix.png' %}"
            alt="Heat map of test-set errors by actual digit (rows) and predicted digit (columns), diagonal excluded from the color scale. The darkest cells are 9 predicted as 4 (5 errors) and 5 predicted as 3 (4 errors)."
            loading="lazy">
       <figcaption>Confusion matrix for the test set. Darker cells mean more errors.</figcaption>
@@ -438,7 +438,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
     <p>Two of these are not independent errors but two halves of the same
        underlying confusion.</p>
 
-    <h3>The 3 and 5 cluster</h3>
+    <h3>The 3 And 5 Cluster</h3>
     <p>The model called a 3 a 5 three times and called a 5 a 3 four times, for
        seven errors between them. This is the single largest source of error in
        the model and it runs in both directions, which tells us the two digits are
@@ -451,7 +451,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        the top bar often curves, and at that point the two digits differ by a
        handful of pixels in one corner.</p>
 
-    <h3>The 4 and 9 cluster</h3>
+    <h3>The 4 And 9 Cluster</h3>
     <p>The model called a 9 a 4 five times and called a 4 a 9 twice, for seven
        errors. Unlike the 3 and 5 case, this one is asymmetric. The model is more
        than twice as likely to read a 9 as a 4 than the reverse.</p>
@@ -464,7 +464,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        sealing the open corner of a 4 requires overshooting the stroke, which
        happens less often.</p>
 
-    <h3>Why the model loses this information</h3>
+    <h3>Why The Model Loses This Information</h3>
     <p>Both clusters depend on a small, local detail rather than on overall shape,
        and that is exactly the kind of feature a convolutional network is
        structured to discard.</p>
@@ -479,7 +479,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        looking that closely, and that same property is what gives it 99.5 percent
        accuracy on everything else.</p>
 
-    <h3>Per digit error rates</h3>
+    <h3>Per Digit Error Rates</h3>
     <p>Error counts on their own are misleading because the test set does not
        contain equal numbers of each digit. The table below normalizes by how
        often each digit actually appears.</p>
@@ -518,7 +518,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        distinctive signature that nothing else in the digit set resembles, so once
        the model sees it there is little to confuse it with.</p>
 
-    <h3>The 8 is a sink for uncertainty</h3>
+    <h3>The 8 Is A Sink For Uncertainty</h3>
     <p>The last column of the table above reveals something interesting that is not
        obvious when looking at only the error rate. While 8 is almost never
        misread as something else, it is the answer the model gives most often when
@@ -537,11 +537,11 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
   </section>
 
   <section id="perfect">
-    <h2>Is 100 percent accuracy possible?</h2>
+    <h2>Is 100 Percent Accuracy Possible?</h2>
     <p class="callout">Our answer is no&mdash;based on the dataset and the variance in
        handwriting, 100% accuracy is not possible.</p>
 
-    <h3>The limit is in the data</h3>
+    <h3>The Limit Is In The Data</h3>
     <p>Every dataset has some level of error that no model can go below, because
        some of the inputs do not contain enough information to determine the
        answer. For MNIST this shows up in three forms.</p>
@@ -562,7 +562,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        so thin that downsampling broke them into disconnected fragments, and the
        information needed to reconnect them does not exist anywhere in the file.</p>
 
-    <h3>What the evidence in our own results shows</h3>
+    <h3>What The Evidence In Our Own Results Shows</h3>
     <p>The most direct evidence sits in our own confident error grid. Those images
        were misclassified with confidence at or near 1.00, meaning the model was
        not hesitating. It looked at the image, found strong evidence for the wrong
@@ -575,7 +575,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        disagrees with the visual evidence in front of it. Our errors are
        overwhelmingly of the second kind.</p>
 
-    <h3>Where that leaves us</h3>
+    <h3>Where That Leaves Us</h3>
     <p>Our 99.52 percent leaves 48 errors. We would estimate that a stronger
        approach, using augmentation and an ensemble, could recover perhaps half of
        them, since those techniques mainly help with unusual but legible

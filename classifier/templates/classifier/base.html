@@ -10,9 +10,9 @@
 </head>
 <body>
     <nav class="topnav">
-        <span class="brand">RM 294 — MNIST Classifier</span>
+        <span class="brand">Group 2 — MNIST Classifier</span>
         {% if user.is_authenticated %}
-            <a href="{% url 'writeup' %}">Write-up</a>
+            <a href="{% url 'writeup' %}">Write-Up</a>
             <a href="{% url 'classify' %}">Classify a Digit</a>
             <a href="{% url 'logout' %}">Log out ({{ user.username }})</a>
         {% endif %}
@@ -29,7 +29,7 @@
     </main>
 
     <footer class="footer">
-        RM 294 — Optimization II · MNIST Classifier
+        Group 2 — Dynamic Optimization/Reinforcement Learning · MNIST Classifier
     </footer>
 </body>
 </html>
