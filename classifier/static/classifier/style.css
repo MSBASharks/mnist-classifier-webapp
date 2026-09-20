@@ -213,6 +213,9 @@ button:hover {
   border-bottom: 0;
   color: var(--heading);
   scroll-margin-top: 1rem;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: .35rem;   
 }
 .writeup h3 { font-size: 1.2rem; margin: 2rem 0 .5rem; color: var(--heading); }
 .writeup p  { margin: 0 0 1rem; }
