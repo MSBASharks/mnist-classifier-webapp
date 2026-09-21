@@ -28,6 +28,7 @@
       <li><a href="#examples">Well Classified and Misclassified Examples</a></li>
       <li><a href="#confusions">Common Confusions And Why They Occur</a></li>
       <li><a href="#perfect">Is 100 percent Accuracy Possible?</a></li>
+      <li><a href="#architecture-deploy">System Architecture &amp; Deployment</a></li>
     </ol>
   </nav>
 
@@ -589,6 +590,76 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        model that had flagged those 48 images as uncertain would be more useful in
        practice than one that got a few more of them right while remaining equally
        overconfident about the rest.</p>
+  </section>
+
+  <!-- ====================== PART 3: DEPLOYMENT ====================== -->
+
+  <div class="part-divider">
+    <h2 class="part-title">Deployment</h2>
+    <p class="writeup-subtitle">Group Project 1 &mdash; MNIST Image Classification</p>
+  </div>
+
+  <section id="architecture-deploy">
+    <h2>System Architecture &amp; Deployment</h2>
+
+    <p>In order to publish our model and enable its use outside of our local machines,
+      we decided to develop a web application. Our site allows a user to upload their own image file
+      for categorization and returns our model's prediction. This section outlines what components comprise
+      our web application, how they fit together, and why we chose each one.</p>
+
+    <figure>
+      <img src="{% static 'classifier/images/system-architecture.png' %}"
+           alt="Architecture diagram: a browser sends an HTTPS request to a public ngrok tunnel, which forwards traffic to a Django app (served via Gunicorn) running inside a Docker container on an Amazon Lightsail instance. Django makes an in-process call to the TensorFlow/Keras model and reads and writes an SQLite database. Separately, a developer workstation pushes code to GitHub, and the Lightsail instance pulls from GitHub to deploy updates."
+           loading="lazy">
+      <figcaption>Solid arrows are live request traffic; the dashed arrow is the deployment path, not something that happens on every page load.</figcaption>
+    </figure>
+
+    <h3>Why These Pieces, Specifically</h3>
+    <ul class="component-list">
+      <li><strong>Django</strong> runs the actual site: it checks whether you're
+         logged in, decides which page to show, and accepts the uploaded file.
+         We picked it because Django is Python-based, which meant it could natively
+         incorporate our model, which was built in Python using TensorFlow.</li>
+      <li><strong>Gunicorn</strong> sits in front of Django. Django ships with its
+         own development server, but that server is explicitly not built to
+         handle real traffic reliably or more than one request at a time.
+         Gunicorn is the standard production stand-in, and switching to it was a
+         one-line change, not a redesign.</li>
+      <li><strong>TensorFlow / Keras</strong> is the model itself from the first
+         half of this write-up, loaded once when the application starts rather
+         than reloaded on every upload.</li>
+      <li><strong>SQLite</strong> stores the login accounts.</li>
+      <li><strong>Docker</strong> packages the app together with the exact
+         Python and TensorFlow versions it needs, so the container that runs on
+         the server is identical to the one any of us could run locally. This
+         is what let us build and test the deployment pipeline before the real
+         model even existed &mdash; a placeholder version of the same container
+         stood in for it.</li>
+      <li><strong>Amazon Lightsail</strong> is AWS's simplified offering for "a
+         small Linux server, please" &mdash; flat monthly pricing and a much
+         shorter list of decisions than provisioning raw EC2.</li>
+      <li><strong>ngrok</strong> sets up a real public HTTPS address pointed at our server
+         without separately configuring a domain, a certificate, and a load
+         balancer. One command on the server opens a tunnel and hands back a
+         working <code>https://</code> URL.</li>
+      <li><strong>Git and GitHub</strong> store the Django app, model, and other code
+         separately from the server and allow for multiuser editing and conflict
+         handling. GitHub also doubles as the deploy mechanism: the server updates
+         itself by pulling from the same repository everyone pushes to.</li>
+    </ul>
+
+    <h3>How We Actually Set It Up</h3>
+    <ol class="setup-steps">
+      <li>Provisioned a small Lightsail Linux instance.</li>
+      <li>Installed Docker, git, and ngrok on it.</li>
+      <li>Wrote a <code>Dockerfile</code> and a <code>docker-compose.yml</code> describing the app.</li>
+      <li>Pushed the code to GitHub.</li>
+      <li>Cloned that same repository onto the server.</li>
+      <li>Built and started the container there.</li>
+      <li>Opened an ngrok tunnel inside <code>tmux</code> specifically so it would keep
+          running after we disconnected &mdash; without that, closing the terminal would
+          have silently taken the site down.</li>
+    </ol>
   </section>
 
   <p class="writeup-footer-cta"><a href="{% url 'classify' %}">Try the classifier &rarr;</a></p>
