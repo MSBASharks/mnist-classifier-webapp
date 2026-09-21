@@ -41,31 +41,104 @@ a { color: var(--accent); }
 h1, h2, h3 { color: var(--heading); }
 h1, h2 { text-align: center; }
 
-/* ---------- Navigation ---------- */
+/* ---------- Layout: sidebar + page body ---------- */
 
-.topnav {
-    background: var(--surface-2);
-    border-bottom: 1px solid var(--border);
-    color: var(--text);
-    padding: 0.75rem 1.5rem;
+.layout {
     display: flex;
-    flex-wrap: wrap;
-    gap: 1.5rem;
-    align-items: center;
-    justify-content: center;       /* centered nav */
+    min-height: 100vh;
+    align-items: stretch;
 }
 
-.topnav .brand {
+.sidebar {
+    box-sizing: border-box;
+    width: 230px;
+    flex-shrink: 0;
+    background: var(--surface-2);
+    border-right: 1px solid var(--border);
+    padding: 1.5rem 1.25rem;
+    display: flex;
+    flex-direction: column;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;   /* if the link list is taller than the screen, the sidebar scrolls on its own rather than pushing "Log out" off-screen */
+}
+
+.sidebar-brand {
     font-weight: 600;
+    margin-bottom: 1.5rem;
+    color: var(--text);
 }
 
-.topnav a {
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.sidebar-item {
+    margin-bottom: 0.35rem;
+}
+
+.sidebar-link {
+    display: block;
+    padding: 0.5rem 0.6rem;
+    border-radius: 6px;
     color: var(--muted);
     text-decoration: none;
 }
 
-.topnav a:hover {
+.sidebar-link:hover {
     color: var(--text);
+    background: var(--accent-bg);
+}
+
+.sidebar-link.active {
+    color: var(--text);
+    background: var(--accent-bg);
+    font-weight: 600;
+}
+
+/* "On This Page" sub-links, indented under Write-Up. Only writeup.html
+   fills the sidebar_subnav block, so this only appears on that page. */
+.sidebar-subnav {
+    list-style: none;
+    margin: 0.35rem 0 0.25rem 0;
+    padding-left: 0.9rem;
+    border-left: 2px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.sidebar-subnav li {
+    margin: 0;
+}
+
+.sidebar-subnav a {
+    display: block;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+    text-decoration: none;
+    border-radius: 4px;
+    line-height: 1.3;
+}
+
+.sidebar-subnav a:hover {
+    color: var(--text);
+    background: var(--accent-bg);
+}
+
+.page-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;   /* allows content to shrink properly inside the flex row */
+}
+
+.page-body .content {
+    flex: 1;
 }
 
 /* ---------- Main content card ---------- */
@@ -336,12 +409,87 @@ button:hover {
 .writeup .log-table td:nth-child(2) { min-width: 16rem; }
 
 /* Phones */
+/* ---------- Hamburger toggle + backdrop (mobile only) ---------- */
+
+.hamburger-toggle {
+  display: none;   /* shown only under the mobile breakpoint below */
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 1001;
+  width: 40px;
+  height: 40px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+}
+.hamburger-toggle span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 1px;
+}
+
+.sidebar-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+}
+.sidebar-backdrop.open {
+  display: block;
+}
+
 @media (max-width: 600px) {
   body { font-size: 1.05rem; }
   .writeup h1 { font-size: 1.75rem; }
   .writeup h2 { font-size: 1.35rem; }
   .writeup section { padding: 1.25rem 1rem; }
   .writeup-toc ol { columns: 1; }
+
+  /* Sidebar becomes a fixed, off-canvas drawer instead of a horizontal
+     bar. position: fixed takes it out of the normal flex flow, so
+     .page-body naturally takes the full width on its own -- no change
+     needed to .layout itself. */
+  .hamburger-toggle {
+    display: flex;
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 260px;
+    max-width: 80vw;
+    height: 100vh;
+    flex-direction: column;
+    padding: 4.5rem 1.25rem 1.5rem;   /* extra top padding clears the hamburger button */
+    border-right: 1px solid var(--border);
+    border-bottom: 0;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    z-index: 1000;
+  }
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Sub-links stay visible here -- there's a full drawer's worth of room
+     now, unlike the old cramped horizontal bar. */
+  .sidebar-subnav {
+    display: flex;
+  }
+
+  .page-body {
+    padding-top: 3.5rem;   /* room for the fixed hamburger button */
+  }
 }
 
 @media print {
@@ -370,21 +518,29 @@ button:hover {
   color: var(--wu-accent);
 }
 
-/* Logout is a POST-only form (Django 5 requirement), styled to look
-   identical to the plain <a> links beside it in .topnav. */
-.topnav .logout-form {
-  display: contents;
+/* Logout is a POST-only form (Django 5 requirement). margin-top: auto is
+   what pins it to the bottom of the sidebar regardless of how much nav
+   content sits above it. */
+.sidebar .logout-form {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
 }
-.topnav .logout-link {
+.sidebar .logout-link {
   background: none;
   border: none;
-  padding: 0;
+  padding: 0.5rem 0.6rem;
   margin: 0;
   font: inherit;
+  width: 100%;
+  text-align: left;
+  display: block;
+  border-radius: 6px;
   color: var(--muted);
   text-decoration: none;
   cursor: pointer;
 }
-.topnav .logout-link:hover {
+.sidebar .logout-link:hover {
   color: var(--text);
+  background: var(--accent-bg);
 }
