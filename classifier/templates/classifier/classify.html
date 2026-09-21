@@ -20,12 +20,6 @@
                 Predicted digit: <strong>{{ predicted_digit }}</strong>
                 <span class="confidence">({{ confidence_pct }}% confidence)</span>
             </p>
-            <p><small>
-                Update: trained model seems to be live now. Prediction is currently from a placeholder stub, not the
-                trained model — see ml/model.py. It exists to confirm the
-                upload &rarr; render &rarr; classify &rarr; display pipeline
-                works end to end.
-            </small></p>
             <a href="{% url 'classify' %}"><button type="button">Start Over</button></a>
         </div>
     {% endif %}
