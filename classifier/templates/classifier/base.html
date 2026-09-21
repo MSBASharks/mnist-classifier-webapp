@@ -14,7 +14,10 @@
         {% if user.is_authenticated %}
             <a href="{% url 'writeup' %}">Write-Up</a>
             <a href="{% url 'classify' %}">Classify a Digit</a>
-            <a href="{% url 'logout' %}">Log out ({{ user.username }})</a>
+            <form action="{% url 'logout' %}" method="post" class="logout-form">
+                {% csrf_token %}
+                <button type="submit" class="logout-link">Log out ({{ user.username }})</button>
+            </form>
         {% endif %}
     </nav>
 
