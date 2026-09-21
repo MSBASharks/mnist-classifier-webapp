@@ -348,3 +348,43 @@ button:hover {
   .writeup-toc, .writeup-cta, .writeup-footer-cta { display: none; }
   .writeup figure, .writeup table { break-inside: avoid; }
 }
+
+/* Bulleted/numbered lists used in the System Architecture & Deployment
+   section's "Why These Pieces, Specifically" and "How We Actually Set It
+   Up" content. */
+.writeup .component-list,
+.writeup .setup-steps {
+  margin: 0 0 1.25rem;
+  padding-left: 1.4rem;
+}
+.writeup .component-list li,
+.writeup .setup-steps li {
+  margin-bottom: 1rem;
+}
+.writeup .component-list li:last-child,
+.writeup .setup-steps li:last-child {
+  margin-bottom: 0;
+}
+.writeup .component-list li::marker,
+.writeup .setup-steps li::marker {
+  color: var(--wu-accent);
+}
+
+/* Logout is a POST-only form (Django 5 requirement), styled to look
+   identical to the plain <a> links beside it in .topnav. */
+.topnav .logout-form {
+  display: contents;
+}
+.topnav .logout-link {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: var(--muted);
+  text-decoration: none;
+  cursor: pointer;
+}
+.topnav .logout-link:hover {
+  color: var(--text);
+}
