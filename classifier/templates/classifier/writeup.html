@@ -1,6 +1,27 @@
 {% extends 'classifier/base.html' %}
 {% load static %}
 {% block title %}Process Write-up{% endblock %}
+
+{% block sidebar_subnav %}
+<ul class="sidebar-subnav">
+  <li><a href="#start">Where We Started</a></li>
+  <li><a href="#search">How We Ran The Search</a></li>
+  <li><a href="#unjustified">Taking Out The Choices We Could Not Justify</a></li>
+  <li><a href="#depth">Adding Depth</a></li>
+  <li><a href="#problem-changed">The Problem Changed</a></li>
+  <li><a href="#regularization">Regularization</a></li>
+  <li><a href="#lessons">Lessons Learned</a></li>
+  <li><a href="#final-training">Final Training</a></li>
+  <li><a href="#log">The Full Log</a></li>
+  <li><a href="#differently">What We Would Do Differently</a></li>
+  <li><a href="#architecture">Final Model Architecture</a></li>
+  <li><a href="#examples">Well Classified and Misclassified Examples</a></li>
+  <li><a href="#confusions">Common Confusions And Why They Occur</a></li>
+  <li><a href="#perfect">Is 100 percent Accuracy Possible?</a></li>
+  <li><a href="#architecture-deploy">System Architecture &amp; Deployment</a></li>
+</ul>
+{% endblock %}
+
 {% block content %}
 <article class="writeup">
 
