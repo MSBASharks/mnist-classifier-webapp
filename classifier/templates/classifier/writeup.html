@@ -266,7 +266,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
           <tr><th scope="row">NModel3</th><td>Dropped a dense layer, 3x3 kernels</td><td class="num">99.77</td><td class="num">98.55</td><td class="num">7 min</td></tr>
           <tr><th scope="row">NModel4</th><td>Filters 10 to 32, epochs to 10</td><td class="num">99.83</td><td class="num">98.75</td><td class="num">30 sec (GPU introduced)</td></tr>
           <tr class="key"><th scope="row">NModel5</th><td><strong>Second conv block and same padding</strong></td><td class="num">99.63</td><td class="num"><strong>99.04</strong></td><td class="num">32 sec</td></tr>
-          <tr><th scope="row">NModel6</th><td>Block 2 filters to 64</td><td class="num">99.75</td><td class="num">99.09</td><td class="num">53 sec</td></tr>
+          <tr><th scope="row">NModel6</th><td>Both filters to 64</td><td class="num">99.75</td><td class="num">99.09</td><td class="num">53 sec</td></tr>
           <tr><th scope="row">NModel7</th><td>Batch normalization in both, first block filters to 32</td><td class="num">99.85</td><td class="num">98.46</td><td class="num">52 sec</td></tr>
           <tr><th scope="row">NModel8</th><td>Conv dropout 25%, epochs to 20</td><td class="num">99.69</td><td class="num">99.02</td><td class="num">1 min</td></tr>
           <tr><th scope="row">NModel9</th><td>Conv dropout to 30%</td><td class="num">99.67</td><td class="num">99.30</td><td class="num">1 min</td></tr>
@@ -464,9 +464,10 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
 
     <h3>The 3 And 5 Cluster</h3>
     <p>The model called a 3 a 5 three times and called a 5 a 3 four times, for
-       seven errors between them. This is the single largest source of error in
-       the model and it runs in both directions, which tells us the two digits are
-       genuinely entangled rather than one simply being harder than the other.</p>
+       seven errors between them. This is tied for the largest pairwise source 
+       of error the model and it runs in both directions, which tells us the 
+       two digits are genuinely entangled rather than one simply being harder
+       than the other.</p>
     <p>Structurally, a 3 and a 5 share almost everything. Both have a horizontal
        component at the top, both have a large curve opening to the left at the
        bottom, and both occupy the same region of the frame. The difference is
@@ -497,7 +498,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        pooling deliberately gives up spatial precision in exchange for translation
        invariance, which is what makes the model robust to a digit being written
        slightly off center. The cost is that by the seventh row and column of the
-       final feature map, eeach cell in the final feature map incorporates information
+       final feature map, each cell in the final feature map incorporates information
        from a much larger region of the original image. A two-pixel gap at the top of
        a 9 sits entirely inside one of those cells and may not survive the pooling 
        operation. The model is built to stop looking that closely, and that same 
