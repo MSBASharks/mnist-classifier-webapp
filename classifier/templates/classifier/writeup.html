@@ -191,23 +191,24 @@ Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
 
   <section id="regularization">
     <h2>Regularization</h2>
-    <p>Batch normalization on its own made things slightly worse. Adding it to
+     <p>Batch normalization on its own made things slightly worse. Adding it to
        each convolutional block moved validation accuracy from 99.09% down to
-       98.91%. Because the drop was small, we kept that result in the log rather
+       98.46%. Because the drop was small, we kept that result in the log rather
        than dropping it. What we eventually concluded is that batch normalization
        was doing something useful, but conditionally. It stabilized training
        enough that we could use heavier dropout later without the model failing to
        converge. On its own it did not help.</p>
     <p>Dropout in the convolutional blocks was where we found significant gains in
-       closing the gap. Twenty-five percent after each pooling layer got us to
-       99.22%. Pushing it to 30% held validation equal while pulling training
-       accuracy down from 99.71% to 99.42%, which was the gap closing.</p>
+       closing the gap.  Applying 25% dropout after each pooling layer brought 
+       validation accuracy to 99.22%. Pushing it to 30% held validation equal 
+       while pulling training accuracy down from 99.69% to 99.67%, which was
+       the gap closing.</p>
     <p>Dropout in the dense head was the piece we had been missing. Our final
        model had 468,202 parameters, and 403,000 of them, about 86%, were in the
        single connection between the flatten layer and the Dense(128). That is
        where memorization happens, so that is where the heaviest dropout belongs.
        We added 40% dropout after the dense layer, raised the epochs to 50, and
-       got 99.44%.</p>
+       got 99.37%.</p>
   </section>
 
   <section id="lessons">
