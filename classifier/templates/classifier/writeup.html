@@ -134,7 +134,7 @@
   <section id="depth">
     <h2>Adding Depth</h2>
     <p>The biggest single improvement in the whole project came from adding a
-       second convolutional block.</p>
+       second convolutional block .</p>
     <pre class="arch"><code>Conv(32) -&gt; Conv(32) -&gt; MaxPool   # 28x28 -&gt; 14x14
 Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
     <p>That took us from 98.75% to 99.04%. Nothing else we tried moved the number
@@ -200,11 +200,11 @@ Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
        converge. On its own it did not help.</p>
     <p>Dropout in the convolutional blocks was where we found significant gains in
        closing the gap.  Applying 25% dropout after each pooling layer brought 
-       validation accuracy to 99.22%. Pushing it to 30% held validation equal 
+       validation accuracy to 99.09%. Pushing it to 30% held validation equal 
        while pulling training accuracy down from 99.69% to 99.67%, which was
        the gap closing.</p>
     <p>Dropout in the dense head was the piece we had been missing. Our final
-       model had 468,202 parameters, and 403,000 of them, about 86%, were in the
+       model had 468,202 parameters, and 401,536 of them, about 86%, were in the
        single connection between the flatten layer and the Dense(128). That is
        where memorization happens, so that is where the heaviest dropout belongs.
        We added 40% dropout after the dense layer, raised the epochs to 50, and
