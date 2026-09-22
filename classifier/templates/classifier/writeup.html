@@ -133,8 +133,8 @@
 
   <section id="depth">
     <h2>Adding Depth</h2>
-    <p>The biggest single improvement in the whole project came from adding a
-       second convolutional block .</p>
+    <p>The biggest improvement in the whole project came when we added a second 
+       convolutional block and same padding.</p>
     <pre class="arch"><code>Conv(32) -&gt; Conv(32) -&gt; MaxPool   # 28x28 -&gt; 14x14
 Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
     <p>That took us from 98.75% to 99.04%. Nothing else we tried moved the number
@@ -157,7 +157,7 @@ Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
        surviving to the dense layer, and it also made the arithmetic predictable
        enough that we could work out the flatten size in our heads instead of
        running summary every time.</p>
-    <p>After that we doubled the filters in block 2 from 32 to 64. That moved us
+    <p>After that we doubled the filters in both blocks from 32 to 64. That moved us
        from 99.04% to 99.09%, which is inside our noise floor. We took that as a
        signal that capacity was no longer the thing holding us back.</p>
   </section>
@@ -200,9 +200,9 @@ Conv(64) -&gt; Conv(64) -&gt; MaxPool   # 14x14 -&gt; 7x7</code></pre>
        converge. On its own it did not help.</p>
     <p>Dropout in the convolutional blocks was where we found significant gains in
        closing the gap.  Applying 25% dropout after each pooling layer brought 
-       validation accuracy to 99.09%. Pushing it to 30% held validation equal 
-       while pulling training accuracy down from 99.69% to 99.67%, which was
-       the gap closing.</p>
+       validation accuracy to 99.02%. Pushing it to 30% increased validation 
+       accuracy to 99.30% while pulling training accuracy down from 99.69% 
+       to 99.67%, which was the gap closing.</p>
     <p>Dropout in the dense head was the piece we had been missing. Our final
        model had 468,202 parameters, and 401,536 of them, about 86%, were in the
        single connection between the flatten layer and the Dense(128). That is
@@ -268,7 +268,7 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
           <tr class="key"><th scope="row">NModel5</th><td><strong>Second conv block and same padding</strong></td><td class="num">99.63</td><td class="num"><strong>99.04</strong></td><td class="num">32 sec</td></tr>
           <tr><th scope="row">NModel6</th><td>Block 2 filters to 64</td><td class="num">99.75</td><td class="num">99.09</td><td class="num">53 sec</td></tr>
           <tr><th scope="row">NModel7</th><td>Batch normalization in both, first block filters to 32</td><td class="num">99.85</td><td class="num">98.46</td><td class="num">52 sec</td></tr>
-          <tr><th scope="row">NModel8</th><td>Conv dropout 25%, epochs to 20</td><td class="num">99.69</td><td class="num">99.09</td><td class="num">1 min</td></tr>
+          <tr><th scope="row">NModel8</th><td>Conv dropout 25%, epochs to 20</td><td class="num">99.69</td><td class="num">99.02</td><td class="num">1 min</td></tr>
           <tr><th scope="row">NModel9</th><td>Conv dropout to 30%</td><td class="num">99.67</td><td class="num">99.30</td><td class="num">1 min</td></tr>
           <tr class="key"><th scope="row">NModel10</th><td><strong>Dense dropout 40%, epochs to 50</strong></td><td class="num">99.68</td><td class="num"><strong>99.37</strong></td><td class="num">3 min</td></tr>
           <tr class="key"><th scope="row">Final</th><td>Retrained on all 60,000, 40 epochs</td><td class="num">99.59</td><td class="num"><strong>99.52 test</strong></td><td class="num">&mdash;</td></tr>
@@ -497,11 +497,11 @@ Flatten -&gt; Dense(128, ReLU) -&gt; Dropout(0.40) -&gt; Dense(10, softmax)</cod
        pooling deliberately gives up spatial precision in exchange for translation
        invariance, which is what makes the model robust to a digit being written
        slightly off center. The cost is that by the seventh row and column of the
-       final feature map, each cell summarizes a 4 by 4 region of the original
-       image. A two-pixel gap at the top of a 9 sits entirely inside one of those
-       cells and may not survive the pooling operation. The model is built to stop
-       looking that closely, and that same property is what gives it 99.5 percent
-       accuracy on everything else.</p>
+       final feature map, eeach cell in the final feature map incorporates information
+       from a much larger region of the original image. A two-pixel gap at the top of
+       a 9 sits entirely inside one of those cells and may not survive the pooling 
+       operation. The model is built to stop looking that closely, and that same 
+       property is what gives it 99.5 percent accuracy on everything else.</p>
 
     <h3>Per Digit Error Rates</h3>
     <p>Error counts on their own are misleading because the test set does not
